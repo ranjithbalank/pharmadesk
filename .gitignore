@@ -1,0 +1,20 @@
+# Python
+backend/venv/
+__pycache__/
+*.py[cod]
+backend/db.sqlite3
+backend/db.before-restore-*.sqlite3
+backend/media/
+backend/staticfiles/
+backend/backups/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

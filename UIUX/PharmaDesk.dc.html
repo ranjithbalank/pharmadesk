@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#cdd6e6;border-radius:6px;border:2px solid transparent;background-clip:content-box}
+  ::-webkit-scrollbar-track{background:transparent}
+  @keyframes pdpop{from{transform:translateY(7px)}to{transform:translateY(0)}}
+</style>
+</helmet>
+<div style="display:flex;height:100vh;width:100%;overflow:hidden;font-family:'IBM Plex Sans',system-ui,sans-serif;background:#eef2f8;color:#101828;font-size:14px">
+
+  <aside style="{{ sidebarStyle }}">
+    <div style="display:flex;align-items:center;gap:11px;padding:18px 16px 16px 18px;border-bottom:1px solid rgba(255,255,255,.07)">
+      <div style="flex:none;width:36px;height:36px;border-radius:9px;background:var(--accent,#2f6df0);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:17px;box-shadow:0 2px 8px rgba(47,109,240,.45)">℞</div>
+      <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}">
+        <div style="min-width:0">
+          <div style="font-weight:700;font-size:15px;color:#fff;letter-spacing:-.2px;white-space:nowrap">Sri Sakthi Medicals</div>
+          <div style="font-size:11px;color:#7e8db0;font-family:'IBM Plex Mono',monospace;white-space:nowrap">GSTIN 33ABCFS1234K1Z9</div>
+        </div>
+      </sc-if>
+    </div>
+
+    <nav style="flex:1;padding:10px 0;overflow-y:auto">
+      <div onClick="{{ goDashboard }}" style="{{ navDashboard }}" style-hover="background:rgba(255,255,255,.06)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Dashboard</span></sc-if>
+        <sc-if value="{{ alertCount }}" hint-placeholder-val="{{ true }}"><span style="{{ alertBadgeStyle }}">{{ alertCount }}</span></sc-if>
+      </div>
+      <div onClick="{{ goBilling }}" style="{{ navBilling }}" style-hover="background:rgba(255,255,255,.06)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2v20l2.5-1.5L10 22l2-1.5L14 22l2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5z"/><path d="M9 8h6M9 12h6"/></svg>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Billing</span></sc-if>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><kbd style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6f7ea2;border:1px solid rgba(255,255,255,.14);border-radius:4px;padding:1px 5px">F2</kbd></sc-if>
+      </div>
+      <div onClick="{{ goInventory }}" style="{{ navInventory }}" style-hover="background:rgba(255,255,255,.06)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.27 6.96 8.73 5.05 8.73-5.05M12 22V12"/></svg>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Inventory</span></sc-if>
+      </div>
+      <div onClick="{{ goPurchase }}" style="{{ navPurchase }}" style-hover="background:rgba(255,255,255,.06)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Purchase Orders</span></sc-if>
+        <sc-if value="{{ poBadge }}" hint-placeholder-val="{{ false }}"><span style="{{ poBadgeStyle }}">{{ poBadge }}</span></sc-if>
+      </div>
+      <div onClick="{{ goSuppliers }}" style="{{ navSuppliers }}" style-hover="background:rgba(255,255,255,.06)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.2-5h15.6L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M9 13h6"/></svg>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Suppliers</span></sc-if>
+      </div>
+      <div onClick="{{ goCustomers }}" style="{{ navCustomers }}" style-hover="background:rgba(255,255,255,.06)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Customers</span></sc-if>
+      </div>
+      <div onClick="{{ goReports }}" style="{{ navReports }}" style-hover="background:rgba(255,255,255,.06)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Reports</span></sc-if>
+      </div>
+    </nav>
+
+    <div onClick="{{ goSettings }}" style="{{ navSettings }}" style-hover="background:rgba(255,255,255,.06)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">Settings</span></sc-if>
+    </div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header style="flex:none;height:60px;background:#fff;border-bottom:1px solid #e3e8f1;display:flex;align-items:center;gap:16px;padding:0 22px">
+      <div onClick="{{ toggleSidebar }}" style="flex:none;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#5b6781;border:1px solid #e3e8f1" style-hover="background:#f3f6fb">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </div>
+      <div>
+        <div style="font-weight:600;font-size:16px;letter-spacing:-.2px">{{ viewTitle }}</div>
+        <div style="font-size:12px;color:#8a94a6">{{ viewSubtitle }}</div>
+      </div>
+      <div style="flex:1"></div>
+      <div onClick="{{ toggleOffline }}" style="{{ connStyle }}" style-hover="filter:brightness(.98)">
+        <span style="{{ connDot }}"></span>{{ connLabel }}
+      </div>
+      <div style="display:flex;background:#f1f4fa;border:1px solid #e3e8f1;border-radius:9px;padding:3px">
+        <div onClick="{{ setDesktop }}" style="{{ modeDesktopStyle }}">Desktop</div>
+        <div onClick="{{ setCompact }}" style="{{ modeCompactStyle }}">Compact</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding-left:6px">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--accent,#2f6df0);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">SK</div>
+      </div>
+    </header>
+
+    <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:9px 22px;background:#fef0d6;border-bottom:1px solid #f4d39a;color:#92500a;font-size:13px;font-weight:500">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+        Working offline — sales &amp; entries are saved locally and will sync automatically when the connection returns.
+      </div>
+    </sc-if>
+
+    <main style="flex:1;min-height:0;overflow-y:auto;padding:24px">
+
+      <!-- ============ DASHBOARD ============ -->
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="max-width:1280px;margin:0 auto">
+        <div style="display:flex;justify-content:flex-end;gap:9px;margin-bottom:14px">
+          <div onClick="{{ openReturn }}" style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #e3e8f1;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;color:#5b6781;cursor:pointer" style-hover="border-color:#cddbf7;color:var(--accent,#2f6df0)">↩ Sales return</div>
+          <div onClick="{{ openDayClose }}" style="display:flex;align-items:center;gap:7px;background:var(--accent,#2f6df0);color:#fff;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)">Day close · cash recon</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:18px 18px 16px">
+            <div style="font-size:12px;color:#8a94a6;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Today's Sales</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:600;margin-top:8px;letter-spacing:-.5px">₹ 18,420</div>
+            <div style="font-size:12px;color:#067647;margin-top:4px;font-weight:500">▲ 12% vs yesterday · 47 bills</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:18px 18px 16px">
+            <div style="font-size:12px;color:#8a94a6;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Stock Value</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:600;margin-top:8px;letter-spacing:-.5px">{{ stockValue }}</div>
+            <div style="font-size:12px;color:#8a94a6;margin-top:4px;font-weight:500">{{ skuCount }} SKUs in stock</div>
+          </div>
+          <div onClick="{{ goInventory }}" style="background:#fff;border:1px solid #f4cdad;border-radius:12px;padding:18px 18px 16px;cursor:pointer" style-hover="box-shadow:0 4px 14px rgba(181,71,8,.12)">
+            <div style="font-size:12px;color:#b54708;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Needs Reorder</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:600;margin-top:8px;letter-spacing:-.5px;color:#b54708">{{ lowCount }}</div>
+            <div style="font-size:12px;color:#b54708;margin-top:4px;font-weight:500">{{ outCount }} out of stock</div>
+          </div>
+          <div onClick="{{ goInventory }}" style="background:#fff;border:1px solid #f3c7c3;border-radius:12px;padding:18px 18px 16px;cursor:pointer" style-hover="box-shadow:0 4px 14px rgba(180,35,24,.12)">
+            <div style="font-size:12px;color:#b42318;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Near Expiry</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:600;margin-top:8px;letter-spacing:-.5px;color:#b42318">{{ expiryCount }}</div>
+            <div style="font-size:12px;color:#b42318;margin-top:4px;font-weight:500">within {{ winLabel }} · {{ expiryValue }}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px">
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #eef1f6">
+              <div style="font-weight:600;font-size:15px">Reorder suggestions</div>
+              <div onClick="{{ goPurchase }}" style="font-size:13px;color:var(--accent,#2f6df0);font-weight:600;cursor:pointer">Create PO →</div>
+            </div>
+            <sc-for list="{{ reorderList }}" as="row" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid #f3f5f9">
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:14px">{{ row.name }}</div>
+                  <div style="font-size:12px;color:#8a94a6">{{ row.composition }} · {{ row.supplier }}</div>
+                </div>
+                <div style="text-align:right;font-family:'IBM Plex Mono',monospace">
+                  <div style="font-size:13px;font-weight:600;color:{{ row.stockColor }}">{{ row.stock }} left</div>
+                  <div style="font-size:11px;color:#8a94a6">reorder @ {{ row.reorder }}</div>
+                </div>
+                <div onClick="{{ row.addPO }}" style="{{ row.poBtnStyle }}" style-hover="filter:brightness(.96)">{{ row.poBtnLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden">
+            <div style="padding:15px 18px;border-bottom:1px solid #eef1f6;font-weight:600;font-size:15px">Near-expiry batches</div>
+            <sc-for list="{{ expiryList }}" as="row" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #f3f5f9">
+                <div style="flex:none;width:8px;height:8px;border-radius:50%;background:{{ row.dot }}"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:13.5px">{{ row.name }}</div>
+                  <div style="font-size:11.5px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">Batch {{ row.batch }} · {{ row.qty }} units</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:{{ row.expColor }}">{{ row.exp }}</div>
+                  <div style="font-size:11px;color:{{ row.expColor }};font-weight:500">{{ row.days }}d left</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ BILLING ============ -->
+      <sc-if value="{{ isBilling }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ billingDesktop }}" hint-placeholder-val="{{ true }}">
+      <div style="{{ billLayoutStyle }}">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px">
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:14px">
+            <div style="position:relative">
+              <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9aa3b4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input value="{{ billSearch }}" onChange="{{ onBillSearch }}" placeholder="Scan barcode or search medicine name / composition…  (F3)" style="width:100%;border:1.5px solid #d7deeb;border-radius:9px;padding:13px 14px 13px 42px;font-size:15px;font-family:inherit;outline:none;background:#f9fbfe" style-focus="border-color:var(--accent,#2f6df0);background:#fff"/>
+            </div>
+            <sc-if value="{{ hasSearch }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px;border:1px solid #eef1f6;border-radius:9px;overflow:hidden">
+              <sc-for list="{{ searchResults }}" as="r" hint-placeholder-count="3">
+                <div onClick="{{ r.add }}" style="display:flex;align-items:center;gap:12px;padding:10px 13px;border-bottom:1px solid #f3f5f9;cursor:pointer" style-hover="background:#f4f8ff">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-weight:600;font-size:14px">{{ r.name }} <span style="{{ r.schedStyle }}">{{ r.schedule }}</span></div>
+                    <div style="font-size:12px;color:#8a94a6">{{ r.composition }} · Rack {{ r.rack }}</div>
+                  </div>
+                  <div style="text-align:right;font-family:'IBM Plex Mono',monospace">
+                    <div style="font-size:13px;font-weight:600;color:{{ r.stockColor }}">{{ r.stockLabel }}</div>
+                    <div style="font-size:11px;color:#8a94a6">FEFO exp {{ r.fefoExp }}</div>
+                  </div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;width:78px;text-align:right">{{ r.mrp }}</div>
+                  <div style="flex:none;width:30px;height:30px;border-radius:7px;background:var(--accent,#2f6df0);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1">+</div>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:240px">
+            <div style="display:grid;grid-template-columns:2.2fr 1.1fr .8fr .9fr 1fr 34px;gap:10px;padding:11px 16px;background:#f7f9fd;border-bottom:1px solid #eef1f6;font-size:11px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.4px">
+              <div>Item</div><div>Batch / Exp</div><div style="text-align:center">Qty</div><div style="text-align:right">Rate</div><div style="text-align:right">Amount</div><div></div>
+            </div>
+            <div style="flex:1;overflow-y:auto">
+              <sc-if value="{{ billEmpty }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:220px;color:#aab2c2;gap:10px;text-align:center;padding:24px">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                  <div style="font-size:14px;font-weight:500">Scan or search to add medicines</div>
+                  <div style="font-size:12.5px;color:#bcc4d2">FEFO picks the earliest-expiring batch automatically</div>
+                </div>
+              </sc-if>
+              <sc-for list="{{ billLines }}" as="ln" hint-placeholder-count="0">
+                <div style="display:grid;grid-template-columns:2.2fr 1.1fr .8fr .9fr 1fr 34px;gap:10px;padding:11px 16px;border-bottom:1px solid #f3f5f9;align-items:center">
+                  <div style="min-width:0">
+                    <div style="font-weight:600;font-size:13.5px">{{ ln.name }} <span style="{{ ln.schedStyle }}">{{ ln.schedule }}</span></div>
+                    <div style="font-size:11.5px;color:#8a94a6">{{ ln.composition }}</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="font-size:10.5px;color:#8a94a6">Disc</span><input value="{{ ln.disc }}" onChange="{{ ln.setDisc }}" type="number" style="width:38px;border:1px solid #e3e8f1;border-radius:5px;padding:1px 4px;font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:right;outline:none"/><span style="font-size:10.5px;color:#8a94a6">%</span></div>
+                  </div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:12px">
+                    <div style="font-weight:600">{{ ln.batch }}</div>
+                    <div style="color:{{ ln.expColor }}">{{ ln.exp }}</div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:center;gap:0;border:1px solid #e3e8f1;border-radius:7px;overflow:hidden;width:fit-content;margin:0 auto">
+                    <div onClick="{{ ln.dec }}" style="width:26px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#5b6781;font-size:16px" style-hover="background:#f3f6fb">−</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;width:30px;text-align:center;font-size:13px">{{ ln.qty }}</div>
+                    <div onClick="{{ ln.inc }}" style="width:26px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#5b6781;font-size:16px" style-hover="background:#f3f6fb">+</div>
+                  </div>
+                  <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:13px">{{ ln.rate }}</div>
+                  <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600">{{ ln.amount }}</div>
+                  <div onClick="{{ ln.remove }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#b9c0cd;border-radius:6px" style-hover="background:#fdeceb;color:#b42318">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="{{ billAsideStyle }}">
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:15px">
+            <div style="font-size:12px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:11px">Customer</div>
+            <sc-if value="{{ hasCustomer }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:11px">
+                <div style="width:38px;height:38px;border-radius:50%;background:#e8f0fe;color:var(--accent,#2f6df0);display:flex;align-items:center;justify-content:center;font-weight:600">{{ custInitials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:14px">{{ custName }} <span style="font-size:10px;background:#fef0d6;color:#b54708;border-radius:5px;padding:1px 6px;font-weight:600;vertical-align:middle">REGULAR</span></div>
+                  <div style="font-size:12px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ custPhone }}{{ custKhata }}</div>
+                </div>
+                <div onClick="{{ clearCustomer }}" style="color:#b9c0cd;cursor:pointer;font-size:18px" style-hover="color:#b42318">×</div>
+              </div>
+              <sc-if value="{{ custCanRebill }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ quickRebill }}" style="margin-top:11px;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px dashed #b9cdf5;color:var(--accent,#2f6df0);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#f4f8ff">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  Quick re-bill usual items
+                </div>
+              </sc-if>
+            </sc-if>
+            <sc-if value="{{ noCustomer }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="font-size:13px;color:#8a94a6;margin-bottom:9px">Walk-in customer · pick a regular:</div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <sc-for list="{{ regulars }}" as="c" hint-placeholder-count="3">
+                    <div onClick="{{ c.select }}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #eef1f6;border-radius:8px;cursor:pointer" style-hover="background:#f4f8ff;border-color:#cddbf7">
+                      <div style="width:30px;height:30px;border-radius:50%;background:#eef2f8;color:#5b6781;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px">{{ c.initials }}</div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-weight:600;font-size:13px">{{ c.name }}</div>
+                        <div style="font-size:11px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ c.phone }}</div>
+                      </div>
+                      <sc-if value="{{ c.hasKhata }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:#b54708;font-weight:600;font-family:'IBM Plex Mono',monospace">{{ c.khata }}</div></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5b6781">Taxable value</span><span style="font-family:'IBM Plex Mono',monospace">{{ tGross }}</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13.5px">
+              <span style="color:#5b6781">Discount</span>
+              <span style="display:flex;align-items:center;gap:6px">
+                <input value="{{ discountPct }}" onChange="{{ onDiscount }}" type="number" style="width:48px;border:1px solid #d7deeb;border-radius:6px;padding:3px 6px;font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/>
+                <span style="color:#8a94a6">%</span>
+                <span style="font-family:'IBM Plex Mono',monospace;color:#b42318;width:64px;text-align:right">{{ tDiscount }}</span>
+              </span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#8a94a6"><span>CGST</span><span style="font-family:'IBM Plex Mono',monospace">{{ tCgst }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#8a94a6"><span>SGST</span><span style="font-family:'IBM Plex Mono',monospace">{{ tSgst }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#8a94a6"><span>Round off</span><span style="font-family:'IBM Plex Mono',monospace">{{ tRound }}</span></div>
+            <div style="height:1px;background:#eef1f6;margin:3px 0"></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span style="font-weight:700;font-size:15px">Total payable</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:23px;letter-spacing:-.5px">{{ tGrand }}</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px">
+              <div onClick="{{ payCash }}" style="{{ payCashStyle }}">Cash</div>
+              <div onClick="{{ payUpi }}" style="{{ payUpiStyle }}">UPI</div>
+              <div onClick="{{ payCredit }}" style="{{ payCreditStyle }}">Khata</div>
+            </div>
+            <div onClick="{{ checkout }}" style="{{ checkoutStyle }}" style-hover="filter:brightness(1.05)">
+              <span>Complete sale &amp; print</span>
+              <kbd style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:rgba(255,255,255,.2);border-radius:5px;padding:2px 7px">F12</kbd>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ billingCompact }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;height:100%;max-width:920px;margin:0 auto;gap:12px">
+
+        <div style="display:flex;align-items:center;gap:10px">
+          <div onClick="{{ toggleCustPicker }}" style="position:relative;flex:1;display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #e3e8f1;border-radius:11px;padding:10px 14px;cursor:pointer" style-hover="border-color:#cddbf7">
+            <div style="flex:none;width:36px;height:36px;border-radius:50%;background:{{ custAvatarBg }};color:{{ custAvatarColor }};display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">{{ custAvatar }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:14.5px">{{ custLineMain }}</div>
+              <div style="font-size:12px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ custLineSub }}</div>
+            </div>
+            <kbd style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a94a6;border:1px solid #e3e8f1;border-radius:5px;padding:2px 7px">F4</kbd>
+            <sc-if value="{{ custPickerOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #e3e8f1;border-radius:11px;box-shadow:0 14px 38px rgba(16,24,40,.16);z-index:30;overflow:hidden;padding:6px">
+                <div onClick="{{ pickWalkin }}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;cursor:pointer" style-hover="background:#f4f8ff">
+                  <div style="width:30px;height:30px;border-radius:50%;background:#eef2f8;color:#8a94a6;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px">+</div>
+                  <div style="font-weight:600;font-size:13.5px">Walk-in customer</div>
+                </div>
+                <sc-for list="{{ regularsCompact }}" as="c" hint-placeholder-count="3">
+                  <div onClick="{{ c.select }}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;cursor:pointer" style-hover="background:#f4f8ff">
+                    <div style="width:30px;height:30px;border-radius:50%;background:#e8f0fe;color:var(--accent,#2f6df0);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px">{{ c.initials }}</div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:600;font-size:13.5px">{{ c.name }}</div>
+                      <div style="font-size:11px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ c.phone }}</div>
+                    </div>
+                    <sc-if value="{{ c.hasKhata }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:#b54708;font-weight:600;font-family:'IBM Plex Mono',monospace">{{ c.khata }}</div></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ custCanRebill }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ quickRebill }}" style="flex:none;display:flex;align-items:center;gap:7px;background:#f4f8ff;color:var(--accent,#2f6df0);border:1px solid #cddbf7;border-radius:11px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#e8f0fe">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Re-bill
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="position:relative">
+          <svg style="position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#9aa3b4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input ref="{{ searchRef }}" value="{{ billSearch }}" onChange="{{ onBillSearch }}" placeholder="Scan barcode or type to search medicine…" style="width:100%;border:1.5px solid #d7deeb;border-radius:11px;padding:16px 56px 16px 46px;font-size:16px;font-family:inherit;outline:none;background:#fff" style-focus="border-color:var(--accent,#2f6df0);box-shadow:0 0 0 3px rgba(47,109,240,.12)"/>
+          <kbd style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a94a6;border:1px solid #e3e8f1;border-radius:5px;padding:2px 7px">F3</kbd>
+          <sc-if value="{{ hasSearch }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #e3e8f1;border-radius:11px;box-shadow:0 14px 38px rgba(16,24,40,.16);z-index:30;overflow:hidden">
+              <sc-for list="{{ searchResults }}" as="r" hint-placeholder-count="3">
+                <div onClick="{{ r.add }}" style="display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid #f3f5f9;cursor:pointer" style-hover="background:#f4f8ff">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-weight:600;font-size:14.5px">{{ r.name }} <span style="{{ r.schedStyle }}">{{ r.schedule }}</span></div>
+                    <div style="font-size:12px;color:#8a94a6">{{ r.composition }} · Rack {{ r.rack }}</div>
+                  </div>
+                  <div style="text-align:right"><div style="font-size:12.5px;font-weight:600;color:{{ r.stockColor }}">{{ r.stockLabel }}</div><div style="font-size:11px;color:#8a94a6">exp {{ r.fefoExp }}</div></div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14.5px;width:80px;text-align:right">{{ r.mrp }}</div>
+                  <div style="flex:none;width:34px;height:34px;border-radius:8px;background:var(--accent,#2f6df0);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1">+</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="flex:1;min-height:0;background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #eef1f6">
+            <div style="font-size:12px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.4px">Current bill · {{ lineCount }} items</div>
+            <sc-if value="{{ billHasLines }}" hint-placeholder-val="{{ false }}"><div onClick="{{ clearBill }}" style="font-size:12.5px;color:#b42318;font-weight:600;cursor:pointer">Clear</div></sc-if>
+          </div>
+          <div style="flex:1;overflow-y:auto">
+            <sc-if value="{{ billEmpty }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:150px;color:#aab2c2;gap:8px;text-align:center;padding:20px">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                <div style="font-size:13.5px;font-weight:500">Scan or press F3 to add medicines</div>
+              </div>
+            </sc-if>
+            <sc-for list="{{ billLines }}" as="ln" hint-placeholder-count="0">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid #f3f5f9">
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:14.5px">{{ ln.name }} <span style="{{ ln.schedStyle }}">{{ ln.schedule }}</span></div>
+                  <div style="font-size:12px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ ln.batch }} · exp {{ ln.exp }} · {{ ln.rate }}</div>
+                </div>
+                <div style="display:flex;align-items:center;border:1px solid #e3e8f1;border-radius:9px;overflow:hidden">
+                  <div onClick="{{ ln.dec }}" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#5b6781;font-size:19px" style-hover="background:#f3f6fb">−</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;width:34px;text-align:center;font-size:14.5px">{{ ln.qty }}</div>
+                  <div onClick="{{ ln.inc }}" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#5b6781;font-size:19px" style-hover="background:#f3f6fb">+</div>
+                </div>
+                <div style="width:92px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px">{{ ln.amount }}</div>
+                <div onClick="{{ ln.remove }}" style="flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#b9c0cd;border-radius:7px" style-hover="background:#fdeceb;color:#b42318">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:none;background:#0e1b39;border-radius:14px;padding:13px 18px 15px;color:#fff">
+          <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.1);font-size:12.5px">
+            <span style="color:#9aa7c7">Taxable <span style="color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:600">{{ tGross }}</span></span>
+            <span style="display:flex;align-items:center;gap:6px;color:#9aa7c7">Disc
+              <input value="{{ discountPct }}" onChange="{{ onDiscount }}" type="number" style="width:44px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:3px 6px;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;outline:none"/>%
+              <span style="color:#ff9f87;font-family:'IBM Plex Mono',monospace">{{ tDiscount }}</span>
+            </span>
+            <span style="color:#9aa7c7">CGST <span style="color:#fff;font-family:'IBM Plex Mono',monospace">{{ tCgst }}</span></span>
+            <span style="color:#9aa7c7">SGST <span style="color:#fff;font-family:'IBM Plex Mono',monospace">{{ tSgst }}</span></span>
+            <span style="color:#9aa7c7">Round <span style="color:#fff;font-family:'IBM Plex Mono',monospace">{{ tRound }}</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:12px">
+            <div style="flex:none">
+              <div style="font-size:11px;color:#9aa7c7;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Total payable</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:30px;letter-spacing:-.5px;line-height:1.1">{{ tGrand }}</div>
+            </div>
+            <div style="flex:1;display:flex;gap:7px;min-width:160px">
+              <div onClick="{{ payCash }}" style="{{ payCashDark }}">Cash</div>
+              <div onClick="{{ payUpi }}" style="{{ payUpiDark }}">UPI</div>
+              <div onClick="{{ payCredit }}" style="{{ payCreditDark }}">Khata</div>
+            </div>
+            <div onClick="{{ checkout }}" style="flex:none;display:flex;align-items:center;gap:10px;background:#1f9d57;color:#fff;border-radius:10px;padding:14px 22px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 4px 14px rgba(31,157,87,.4)" style-hover="filter:brightness(1.06)">
+              Complete sale
+              <kbd style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:rgba(255,255,255,.22);border-radius:5px;padding:2px 7px">F12</kbd>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </sc-if>
+      </sc-if>
+
+      <!-- ============ INVENTORY ============ -->
+      <sc-if value="{{ isInventory }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:1320px;margin:0 auto">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+          <div style="position:relative;flex:1;min-width:240px">
+            <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#9aa3b4" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input value="{{ invQuery }}" onChange="{{ onInvQuery }}" placeholder="Search medicine, composition or rack…" style="width:100%;border:1px solid #d7deeb;border-radius:9px;padding:10px 14px 10px 38px;font-size:14px;font-family:inherit;outline:none;background:#fff" style-focus="border-color:var(--accent,#2f6df0)"/>
+          </div>
+          <div style="display:flex;background:#fff;border:1px solid #e3e8f1;border-radius:9px;padding:3px;gap:2px">
+            <sc-for list="{{ invFilters }}" as="f" hint-placeholder-count="5">
+              <div onClick="{{ f.select }}" style="{{ f.style }}">{{ f.label }} <span style="opacity:.7">{{ f.count }}</span></div>
+            </sc-for>
+          </div>
+          <div onClick="{{ openAddItem }}" style="flex:none;display:flex;align-items:center;gap:7px;background:var(--accent,#2f6df0);color:#fff;border-radius:9px;padding:10px 15px;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Add item
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:2.6fr 1fr .9fr 1fr 1fr 1.1fr;gap:10px;padding:12px 18px;background:#f7f9fd;border-bottom:1px solid #eef1f6;font-size:11px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.4px">
+            <div>Medicine</div><div>Schedule / HSN</div><div style="text-align:right">In stock</div><div style="text-align:right">MRP</div><div>Earliest exp</div><div style="text-align:right">Status</div>
+          </div>
+          <sc-for list="{{ invRows }}" as="m" hint-placeholder-count="8">
+            <div>
+              <div onClick="{{ m.toggle }}" style="display:grid;grid-template-columns:2.6fr 1fr .9fr 1fr 1fr 1.1fr;gap:10px;padding:13px 18px;border-bottom:1px solid #f3f5f9;align-items:center;cursor:pointer" style-hover="background:#f9fbfe">
+                <div style="min-width:0;display:flex;align-items:center;gap:9px">
+                  <span style="color:#b9c0cd;font-size:11px;transition:transform .15s;transform:{{ m.caret }}">▶</span>
+                  <div style="min-width:0">
+                    <div style="font-weight:600;font-size:14px">{{ m.name }}</div>
+                    <div style="font-size:12px;color:#8a94a6">{{ m.composition }} · {{ m.mfr }} · Rack {{ m.rack }}</div>
+                  </div>
+                </div>
+                <div><span style="{{ m.schedStyle }}">{{ m.schedule }}</span> <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9aa3b4">{{ m.hsn }}</span></div>
+                <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:{{ m.stockColor }}">{{ m.stock }}</div>
+                <div style="text-align:right;font-family:'IBM Plex Mono',monospace">{{ m.mrp }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:{{ m.expColor }}">{{ m.earliestExp }}</div>
+                <div style="text-align:right"><span style="{{ m.statusStyle }}">{{ m.statusLabel }}</span></div>
+              </div>
+              <sc-if value="{{ m.expanded }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#f9fbfe;border-bottom:1px solid #eef1f6;padding:6px 18px 14px 40px">
+                  <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:10px;padding:8px 12px;font-size:10.5px;font-weight:700;color:#9aa3b4;text-transform:uppercase;letter-spacing:.4px">
+                    <div>Batch</div><div>Mfg</div><div>Expiry</div><div style="text-align:right">Qty</div><div style="text-align:right">Cost / MRP</div>
+                  </div>
+                  <sc-for list="{{ m.batches }}" as="b" hint-placeholder-count="2">
+                    <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:10px;padding:8px 12px;background:#fff;border:1px solid #eef1f6;border-radius:8px;margin-bottom:6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;align-items:center">
+                      <div style="font-weight:600">{{ b.batch }}</div>
+                      <div style="color:#8a94a6">{{ b.mfg }}</div>
+                      <div style="color:{{ b.expColor }};font-weight:500">{{ b.exp }} <span style="font-size:10px">({{ b.days }})</span></div>
+                      <div style="text-align:right;font-weight:600">{{ b.qty }}</div>
+                      <div style="text-align:right;color:#5b6781">{{ b.cost }} / {{ b.mrp }}</div>
+                    </div>
+                  </sc-for>
+                  <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:0 12px">
+                    <div onClick="{{ m.edit }}" style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #e3e8f1;border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;color:var(--accent,#2f6df0);cursor:pointer" style-hover="border-color:#cddbf7;background:#f4f8ff">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+                      Edit / add batch
+                    </div>
+                    <div onClick="{{ m.adjust }}" style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #e3e8f1;border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;color:#b54708;cursor:pointer" style-hover="border-color:#f4cdad;background:#fdf3e7">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+                      Adjust stock
+                    </div>
+                    <span style="font-size:11.5px;color:#8a94a6">Bought from <b style="color:#5b6781">{{ m.supplier }}</b> · adjustments logged to audit</span>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ PURCHASE ORDERS ============ -->
+      <sc-if value="{{ isPurchase }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1.5fr 1fr;gap:16px">
+        <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden;height:fit-content">
+          <div style="padding:15px 18px;border-bottom:1px solid #eef1f6;font-weight:600;font-size:15px">Recent purchase orders</div>
+          <sc-for list="{{ poList }}" as="po" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid #f3f5f9">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:14px;font-family:'IBM Plex Mono',monospace">{{ po.id }}</div>
+                <div style="font-size:12.5px;color:#8a94a6">{{ po.supplier }} · {{ po.lines }} items · {{ po.date }}</div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px">{{ po.value }}</div>
+              <div style="{{ po.statusStyle }}">{{ po.status }}</div>
+              <sc-if value="{{ po.canReceive }}" hint-placeholder-val="{{ false }}"><div onClick="{{ po.receive }}" style="{{ po.receiveStyle }}" style-hover="filter:brightness(1.05)">Receive</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff;border:1px solid #cddbf7;border-radius:12px;overflow:hidden;height:fit-content;box-shadow:0 6px 20px rgba(47,109,240,.08)">
+          <div style="padding:15px 18px;border-bottom:1px solid #eef1f6;background:#f4f8ff">
+            <div style="font-weight:600;font-size:15px;color:var(--accent,#2f6df0)">Suggested draft PO</div>
+            <div style="font-size:12.5px;color:#5b6781;margin-top:2px">Auto-built from items at / below reorder level</div>
+          </div>
+          <sc-if value="{{ draftEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:34px 18px;text-align:center;color:#aab2c2;font-size:13px">No items queued. Add items from the dashboard reorder list.</div>
+          </sc-if>
+          <sc-for list="{{ draftLines }}" as="d" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #f3f5f9">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:13.5px">{{ d.name }}</div>
+                <div style="font-size:11.5px;color:#8a94a6">{{ d.supplier }}</div>
+              </div>
+              <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px">
+                <div style="font-weight:600">×{{ d.qty }}</div>
+                <div style="color:#8a94a6">{{ d.value }}</div>
+              </div>
+              <div onClick="{{ d.remove }}" style="color:#b9c0cd;cursor:pointer;font-size:18px" style-hover="color:#b42318">×</div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ draftHasLines }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:14px 18px">
+              <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px"><span style="font-weight:600">Estimated value</span><span style="font-family:'IBM Plex Mono',monospace;font-weight:700">{{ draftValue }}</span></div>
+              <div onClick="{{ createPO }}" style="background:var(--accent,#2f6df0);color:#fff;text-align:center;border-radius:9px;padding:11px;font-weight:600;font-size:14px;cursor:pointer" style-hover="filter:brightness(1.05)">Generate PO &amp; export PDF</div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ CUSTOMERS ============ -->
+      <sc-if value="{{ isCustomers }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:1280px;margin:0 auto">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+          <sc-for list="{{ custCards }}" as="c" hint-placeholder-count="6">
+            <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:18px">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:44px;height:44px;border-radius:50%;background:#e8f0fe;color:var(--accent,#2f6df0);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px">{{ c.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:15px">{{ c.name }} <span style="font-size:10px;background:#fef0d6;color:#b54708;border-radius:5px;padding:1px 6px;font-weight:600;vertical-align:middle">REGULAR</span></div>
+                  <div style="font-size:12.5px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ c.phone }}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:14px">
+                <div style="flex:1;background:#f7f9fd;border-radius:8px;padding:9px 11px">
+                  <div style="font-size:11px;color:#8a94a6;text-transform:uppercase;letter-spacing:.3px;font-weight:600">Purchases</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16px;margin-top:2px">{{ c.visits }}</div>
+                </div>
+                <div style="flex:1;background:{{ c.khataBg }};border-radius:8px;padding:9px 11px">
+                  <div style="font-size:11px;color:#8a94a6;text-transform:uppercase;letter-spacing:.3px;font-weight:600">Khata due</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16px;margin-top:2px;color:{{ c.khataColor }}">{{ c.khata }}</div>
+                </div>
+              </div>
+              <div style="margin-top:12px;font-size:12px;color:#8a94a6">Usual: <span style="color:#5b6781">{{ c.usual }}</span></div>
+              <div onClick="{{ c.rebill }}" style="margin-top:13px;display:flex;align-items:center;justify-content:center;gap:7px;background:#f4f8ff;color:var(--accent,#2f6df0);border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#e8f0fe">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Quick re-bill
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ REPORTS ============ -->
+      <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:1320px;margin:0 auto;display:grid;grid-template-columns:260px 1fr;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <sc-for list="{{ reportTabs }}" as="rt" hint-placeholder-count="8">
+            <div onClick="{{ rt.select }}" style="{{ rt.style }}" style-hover="border-color:#cddbf7">
+              <div style="font-weight:600;font-size:13.5px">{{ rt.label }}</div>
+              <div style="font-size:11.5px;color:#8a94a6;margin-top:1px">{{ rt.desc }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid #eef1f6;flex-wrap:wrap">
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:16px">{{ reportTitle }}</div>
+              <div style="font-size:12.5px;color:#8a94a6">{{ reportDesc }}</div>
+            </div>
+            <sc-if value="{{ showReportCat }}" hint-placeholder-val="{{ false }}"><div style="display:flex;background:#f1f4fa;border:1px solid #e3e8f1;border-radius:8px;padding:3px;gap:2px"><sc-for list="{{ reportCats }}" as="rc" hint-placeholder-count="4"><div onClick="{{ rc.select }}" style="{{ rc.style }}">{{ rc.label }}</div></sc-for></div></sc-if>
+            <div style="display:flex;align-items:center;gap:7px;border:1px solid #e3e8f1;border-radius:8px;padding:7px 11px;font-size:12.5px;color:#5b6781;font-family:'IBM Plex Mono',monospace">01 Jun – 22 Jun 2026</div>
+            <div onClick="{{ exportXlsx }}" style="display:flex;align-items:center;gap:7px;background:#eaf6ee;color:#067647;border:1px solid #c3e9d1;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer" style-hover="filter:brightness(.98)">Excel</div>
+            <div onClick="{{ exportPdf }}" style="display:flex;align-items:center;gap:7px;background:#fdeceb;color:#b42318;border:1px solid #f3c7c3;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer" style-hover="filter:brightness(.98)">PDF</div>
+          </div>
+          <div style="display:grid;grid-template-columns:{{ reportCols }};gap:10px;padding:11px 18px;background:#f7f9fd;border-bottom:1px solid #eef1f6;font-size:11px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.4px">
+            <sc-for list="{{ reportHead }}" as="h" hint-placeholder-count="4"><div style="{{ h.align }}">{{ h.label }}</div></sc-for>
+          </div>
+          <sc-for list="{{ reportRows }}" as="row" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:{{ reportCols }};gap:10px;padding:11px 18px;border-bottom:1px solid #f3f5f9;align-items:center;font-size:13px">
+              <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="4"><div style="{{ cell.style }}">{{ cell.text }}</div></sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SUPPLIERS ============ -->
+      <sc-if value="{{ isSuppliers }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:1280px;margin:0 auto">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px">
+          <sc-for list="{{ supplierCards }}" as="sp" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:18px">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="flex:none;width:42px;height:42px;border-radius:10px;background:#e8f0fe;color:var(--accent,#2f6df0);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">{{ sp.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:15px">{{ sp.name }}</div>
+                  <div style="font-size:12px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ sp.gstin }}</div>
+                </div>
+              </div>
+              <div style="font-size:12.5px;color:#5b6781;margin-top:12px">{{ sp.contact }}</div>
+              <div style="display:flex;gap:8px;margin-top:13px">
+                <div style="flex:1;background:#f7f9fd;border-radius:8px;padding:9px 11px"><div style="font-size:10.5px;color:#8a94a6;text-transform:uppercase;letter-spacing:.3px;font-weight:600">Lead time</div><div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;margin-top:2px">{{ sp.lead }}</div></div>
+                <div style="flex:1;background:#f7f9fd;border-radius:8px;padding:9px 11px"><div style="font-size:10.5px;color:#8a94a6;text-transform:uppercase;letter-spacing:.3px;font-weight:600">Terms</div><div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;margin-top:2px">{{ sp.terms }}</div></div>
+                <div style="flex:1;background:#f7f9fd;border-radius:8px;padding:9px 11px"><div style="font-size:10.5px;color:#8a94a6;text-transform:uppercase;letter-spacing:.3px;font-weight:600">On-time</div><div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;margin-top:2px;color:{{ sp.adherenceColor }}">{{ sp.adherence }}</div></div>
+              </div>
+              <div style="margin-top:12px;font-size:12px;color:#8a94a6">Short-supply incidents: <span style="color:#5b6781;font-weight:600">{{ sp.short }}</span> · Open POs: <span style="color:#5b6781;font-weight:600">{{ sp.openPOs }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SETTINGS ============ -->
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px">
+        <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:20px">
+          <div style="font-weight:600;font-size:15px;margin-bottom:14px">Shop &amp; licence</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div><div style="font-size:12px;color:#8a94a6;margin-bottom:4px;font-weight:600">Shop name</div><div style="font-size:14px">Sri Sakthi Medicals</div></div>
+            <div><div style="font-size:12px;color:#8a94a6;margin-bottom:4px;font-weight:600">Location</div><div style="font-size:14px">Perundurai, Erode, TN</div></div>
+            <div><div style="font-size:12px;color:#8a94a6;margin-bottom:4px;font-weight:600">GSTIN</div><div style="font-size:14px;font-family:'IBM Plex Mono',monospace">33ABCFS1234K1Z9</div></div>
+            <div><div style="font-size:12px;color:#8a94a6;margin-bottom:4px;font-weight:600">Drug licence no.</div><div style="font-size:14px;font-family:'IBM Plex Mono',monospace">TN/ER/20B-21B/4471</div></div>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:20px">
+          <div style="font-weight:600;font-size:15px;margin-bottom:14px">Defaults &amp; alerts</div>
+          <div style="display:flex;flex-direction:column;gap:13px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:#5b6781">Near-expiry alert window</span><span style="font-family:'IBM Plex Mono',monospace;font-weight:600">{{ winLabel }}</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:#5b6781">Default GST rate</span><span style="font-family:'IBM Plex Mono',monospace;font-weight:600">12%</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:#5b6781">FEFO auto-batch selection</span><span style="background:#eaf6ee;color:#067647;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">Enabled</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:#5b6781">Daily local backup</span><span style="background:#eaf6ee;color:#067647;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">02:00 · last OK</span></div>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;overflow:hidden">
+          <div style="padding:15px 18px;border-bottom:1px solid #eef1f6;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:600;font-size:15px">Audit log</span><span style="font-size:11.5px;color:#8a94a6">sensitive actions · attributable to a user</span></div>
+          <sc-for list="{{ auditRows }}" as="a" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid #f3f5f9">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a94a6;width:42px">{{ a.time }}</div>
+              <div style="flex:none;font-size:11px;font-weight:600;color:var(--accent,#2f6df0);background:#e8f0fe;border-radius:5px;padding:2px 8px">{{ a.action }}</div>
+              <div style="flex:1;min-width:0;font-size:12.5px;color:#5b6781">{{ a.detail }}</div>
+              <div style="font-size:11.5px;color:#8a94a6">{{ a.user }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #e3e8f1;border-radius:12px;padding:20px;display:flex;align-items:center;gap:14px">
+          <div style="flex:none;width:40px;height:40px;border-radius:10px;background:#fef0d6;color:#b54708;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div style="flex:1"><div style="font-weight:600;font-size:14px">Admin password</div><div style="font-size:12.5px;color:#8a94a6">Protects pricing, GST rates &amp; licence details (single shared login · SEC-2)</div></div>
+          <div style="background:#f1f4fa;color:#5b6781;border:1px solid #e3e8f1;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600">Change</div>
+        </div>
+      </div>
+      </sc-if>
+
+    </main>
+  </div>
+
+  <sc-if value="{{ receiveOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:760px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(16,24,40,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eef1f6">
+          <div><div style="font-weight:600;font-size:16px">Goods receipt · {{ receivePOId }}</div><div style="font-size:12.5px;color:#8a94a6">{{ receiveSupplier }} · enter received batch, expiry &amp; qty</div></div>
+          <div onClick="{{ closeReceive }}" style="cursor:pointer;color:#b9c0cd;font-size:22px" style-hover="color:#b42318">×</div>
+        </div>
+        <div style="padding:8px 20px;overflow-y:auto;flex:1">
+          <div style="display:grid;grid-template-columns:1.8fr .7fr 1.1fr 1fr .8fr;gap:10px;padding:9px 4px;font-size:10.5px;font-weight:700;color:#9aa3b4;text-transform:uppercase;letter-spacing:.3px"><div>Item</div><div style="text-align:right">Ord.</div><div>Batch</div><div>Expiry</div><div style="text-align:right">Recv</div></div>
+          <sc-for list="{{ recvLines }}" as="r" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:1.8fr .7fr 1.1fr 1fr .8fr;gap:10px;padding:8px 4px;border-top:1px solid #f3f5f9;align-items:center">
+              <div style="font-weight:600;font-size:13px;min-width:0">{{ r.name }}</div>
+              <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8a94a6">{{ r.ordered }}</div>
+              <input value="{{ r.batch }}" onChange="{{ r.setBatch }}" placeholder="Batch no" style="border:1px solid #d7deeb;border-radius:6px;padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;width:100%"/>
+              <input value="{{ r.exp }}" onChange="{{ r.setExp }}" type="date" style="border:1px solid #d7deeb;border-radius:6px;padding:6px 7px;font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;width:100%"/>
+              <input value="{{ r.qty }}" onChange="{{ r.setQty }}" type="number" style="border:1px solid #d7deeb;border-radius:6px;padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;outline:none;width:100%"/>
+            </div>
+          </sc-for>
+          <div style="font-size:12px;color:#8a94a6;margin-top:10px;padding:0 4px">Short-supplied or partial lines: enter the actual quantity received — the PO stays traceable. Stock and batch records update on post.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 20px;border-top:1px solid #eef1f6">
+          <div onClick="{{ poReturn }}" style="font-size:13px;font-weight:600;color:#b54708;cursor:pointer">Record purchase return</div>
+          <div style="flex:1"></div>
+          <div onClick="{{ closeReceive }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">Cancel</div>
+          <div onClick="{{ postReceipt }}" style="padding:10px 18px;border-radius:8px;background:var(--accent,#2f6df0);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)">Post receipt &amp; update stock</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ itemFormOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:720px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(16,24,40,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #eef1f6">
+          <div><div style="font-weight:600;font-size:16px">{{ itemFormTitle }}</div><div style="font-size:12.5px;color:#8a94a6">{{ itemFormSub }}</div></div>
+          <div onClick="{{ closeItemForm }}" style="cursor:pointer;color:#b9c0cd;font-size:22px" style-hover="color:#b42318">×</div>
+        </div>
+        <div style="padding:18px 22px;overflow-y:auto;flex:1">
+          <div style="font-size:11px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:11px">Medicine details</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+            <div style="grid-column:1 / -1"><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Tab / medicine name *</div><input value="{{ f.name }}" onChange="{{ onF.name }}" placeholder="e.g. Dolo 650 Tab" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-size:14px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/><sc-if value="{{ feName }}" hint-placeholder-val="{{ false }}"><div style="color:#b42318;font-size:11.5px;margin-top:4px;font-weight:500">{{ feName }}</div></sc-if></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Dosage / composition</div><input value="{{ f.composition }}" onChange="{{ onF.composition }}" placeholder="e.g. Paracetamol 650mg" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Manufacturer</div><input value="{{ f.mfr }}" onChange="{{ onF.mfr }}" placeholder="e.g. Micro Labs" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div style="grid-column:1 / -1"><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Schedule</div><div style="display:flex;gap:7px"><sc-for list="{{ schedPills }}" as="s" hint-placeholder-count="4"><div onClick="{{ s.select }}" style="{{ s.style }}">{{ s.label }}</div></sc-for></div></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">HSN code</div><input value="{{ f.hsn }}" onChange="{{ onF.hsn }}" placeholder="e.g. 30049099" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">GST %</div><input value="{{ f.gst }}" onChange="{{ onF.gst }}" type="number" placeholder="12" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Rack / location</div><input value="{{ f.rack }}" onChange="{{ onF.rack }}" placeholder="e.g. A1" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Reorder level</div><input value="{{ f.reorder }}" onChange="{{ onF.reorder }}" type="number" placeholder="e.g. 50" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Reorder qty</div><input value="{{ f.reorderQty }}" onChange="{{ onF.reorderQty }}" type="number" placeholder="e.g. 200" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div style="grid-column:1 / -1"><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Agency bought from</div>
+              <select value="{{ f.supplier }}" onChange="{{ onF.supplier }}" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-size:13.5px;outline:none;background:#fff;font-family:inherit" style-focus="border-color:var(--accent,#2f6df0)">
+                <sc-for list="{{ supplierOpts }}" as="opt" hint-placeholder-count="3"><option value="{{ opt }}">{{ opt }}</option></sc-for>
+              </select>
+            </div>
+          </div>
+
+          <div style="height:1px;background:#eef1f6;margin:20px 0 16px"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+            <div style="font-size:11px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.4px">Opening / purchased batch</div>
+            <div style="font-size:11.5px;color:#8a94a6">optional — leave blank to add the item with zero stock</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:13px">
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Batch no.</div><input value="{{ f.batch }}" onChange="{{ onF.batch }}" placeholder="auto if blank" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/><sc-if value="{{ feBatch }}" hint-placeholder-val="{{ false }}"><div style="color:#b42318;font-size:11.5px;margin-top:4px;font-weight:500">{{ feBatch }}</div></sc-if></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Mfg date</div><input value="{{ f.mfg }}" onChange="{{ onF.mfg }}" placeholder="e.g. Jun 2026" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-size:13px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Expiry date</div><input value="{{ f.exp }}" onChange="{{ onF.exp }}" type="date" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/><sc-if value="{{ feExp }}" hint-placeholder-val="{{ false }}"><div style="color:#b42318;font-size:11.5px;margin-top:4px;font-weight:500">{{ feExp }}</div></sc-if></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Quantity</div><input value="{{ f.qty }}" onChange="{{ onF.qty }}" type="number" placeholder="0" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Cost price ₹</div><input value="{{ f.cost }}" onChange="{{ onF.cost }}" type="number" placeholder="0.00" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">MRP ₹</div><input value="{{ f.mrp }}" onChange="{{ onF.mrp }}" type="number" placeholder="0.00" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/><sc-if value="{{ feMrp }}" hint-placeholder-val="{{ false }}"><div style="color:#b54708;font-size:11.5px;margin-top:4px;font-weight:500">{{ feMrp }}</div></sc-if></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #eef1f6;justify-content:flex-end">
+          <div onClick="{{ closeItemForm }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">Cancel</div>
+          <div onClick="{{ saveItem }}" style="padding:10px 20px;border-radius:8px;background:var(--accent,#2f6df0);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)">Save item</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ adjustOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:460px;max-width:100%;box-shadow:0 24px 60px rgba(16,24,40,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eef1f6">
+          <div><div style="font-weight:600;font-size:16px">Stock adjustment</div><div style="font-size:12.5px;color:#8a94a6">{{ adjustMedName }} · on hand {{ adjustStock }}</div></div>
+          <div onClick="{{ closeAdjust }}" style="cursor:pointer;color:#b9c0cd;font-size:22px" style-hover="color:#b42318">×</div>
+        </div>
+        <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+          <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:6px">Reason</div><div style="display:flex;gap:7px"><sc-for list="{{ adjTypes }}" as="a" hint-placeholder-count="3"><div onClick="{{ a.select }}" style="{{ a.style }}">{{ a.label }}</div></sc-for></div></div>
+          <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:6px">Quantity to remove</div><input value="{{ adjQty }}" onChange="{{ onAdjQty }}" type="number" placeholder="0" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+          <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:6px">Note (optional)</div><input value="{{ adjReason }}" onChange="{{ onAdjReason }}" placeholder="e.g. damaged in transit" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+          <div style="font-size:11.5px;color:#8a94a6">Removed FEFO-first from earliest-expiring batches. Logged to the audit trail with a user stamp.</div>
+        </div>
+        <div style="display:flex;gap:10px;padding:16px 20px;border-top:1px solid #eef1f6;justify-content:flex-end">
+          <div onClick="{{ closeAdjust }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">Cancel</div>
+          <div onClick="{{ postAdjust }}" style="padding:10px 18px;border-radius:8px;background:#b54708;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)">Post adjustment</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ rxOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:560px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(16,24,40,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eef1f6">
+          <div><div style="font-weight:600;font-size:16px">Prescription required</div><div style="font-size:12.5px;color:#8a94a6">Scheduled drugs in this bill · Schedule H1 register</div></div>
+          <div onClick="{{ closeRx }}" style="cursor:pointer;color:#b9c0cd;font-size:22px" style-hover="color:#b42318">×</div>
+        </div>
+        <div style="padding:18px 20px;display:flex;flex-direction:column;gap:13px">
+          <div style="display:flex;flex-wrap:wrap;gap:7px">
+            <sc-for list="{{ rxSchedList }}" as="d" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:6px;background:#f7f9fd;border:1px solid #eef1f6;border-radius:7px;padding:5px 10px;font-size:12.5px;font-weight:600">{{ d.name }} <span style="{{ d.schedStyle }}">{{ d.schedule }}</span> <span style="color:#8a94a6;font-family:'IBM Plex Mono',monospace">×{{ d.qty }}</span></div></sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Prescriber name</div><input value="{{ rxPrescriber }}" onChange="{{ onRxPrescriber }}" placeholder="Dr. …" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:9px 11px;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+            <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Registration no.</div><input value="{{ rxReg }}" onChange="{{ onRxReg }}" placeholder="TN-…" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:9px 11px;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+          </div>
+          <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:5px">Patient name</div><input value="{{ rxPatient }}" onChange="{{ onRxPatient }}" placeholder="Patient" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:9px 11px;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+          <div onClick="{{ toggleRxImg }}" style="{{ rxImgBox }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg><span style="font-size:12.5px;font-weight:600">Attach prescription photo (optional)</span></div>
+          <div onClick="{{ toggleConsent }}" style="display:flex;align-items:flex-start;gap:10px;background:#f7f9fd;border:1px solid #eef1f6;border-radius:9px;padding:11px 13px;cursor:pointer"><div style="{{ consentBox }}">✓</div><div style="font-size:12.5px;color:#5b6781;line-height:1.45">Customer consents to storing personal &amp; prescription data for statutory records (<b>DPDP</b>). Required to proceed.</div></div>
+        </div>
+        <div style="display:flex;gap:10px;padding:16px 20px;border-top:1px solid #eef1f6;justify-content:flex-end">
+          <div onClick="{{ closeRx }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">Cancel</div>
+          <div onClick="{{ submitRx }}" style="padding:10px 18px;border-radius:8px;background:#1f8a4c;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.06)">Save Rx &amp; complete sale</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ returnOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:480px;max-width:100%;box-shadow:0 24px 60px rgba(16,24,40,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eef1f6">
+          <div><div style="font-weight:600;font-size:16px">Sales return / refund</div><div style="font-size:12.5px;color:#8a94a6">Restores stock to the original batch</div></div>
+          <div onClick="{{ closeReturn }}" style="cursor:pointer;color:#b9c0cd;font-size:22px" style-hover="color:#b42318">×</div>
+        </div>
+        <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+          <div><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:6px">Invoice number</div><input value="{{ returnInv }}" onChange="{{ onReturnInv }}" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+          <div style="background:#f7f9fd;border:1px solid #eef1f6;border-radius:9px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>Augmentin 625 Duo ×1 · batch AUG4502</span><span style="font-family:'IBM Plex Mono',monospace">₹201.40</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid #eef1f6;font-weight:600"><span>Refund</span><span style="font-family:'IBM Plex Mono',monospace">₹201.40</span></div>
+          </div>
+          <div style="font-size:11.5px;color:#8a94a6">Returned units are added back to the original batch; the refund is logged to the audit trail.</div>
+        </div>
+        <div style="display:flex;gap:10px;padding:16px 20px;border-top:1px solid #eef1f6;justify-content:flex-end">
+          <div onClick="{{ closeReturn }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">Cancel</div>
+          <div onClick="{{ postReturn }}" style="padding:10px 18px;border-radius:8px;background:#b42318;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)">Process refund</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ dayCloseOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:460px;max-width:100%;box-shadow:0 24px 60px rgba(16,24,40,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eef1f6">
+          <div><div style="font-weight:600;font-size:16px">Day close · cash reconciliation</div><div style="font-size:12.5px;color:#8a94a6">22 June 2026 · end of day</div></div>
+          <div onClick="{{ closeDayClose }}" style="cursor:pointer;color:#b9c0cd;font-size:22px" style-hover="color:#b42318">×</div>
+        </div>
+        <div style="padding:18px 20px;display:flex;flex-direction:column;gap:9px">
+          <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5b6781">Opening cash</span><span style="font-family:'IBM Plex Mono',monospace">{{ dcOpening }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5b6781">Cash sales</span><span style="font-family:'IBM Plex Mono',monospace">{{ dcCash }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5b6781">UPI sales</span><span style="font-family:'IBM Plex Mono',monospace">{{ dcUpi }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5b6781">Khata (credit)</span><span style="font-family:'IBM Plex Mono',monospace">{{ dcKhata }}</span></div>
+          <div style="height:1px;background:#eef1f6;margin:4px 0"></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>Expected in drawer</span><span style="font-family:'IBM Plex Mono',monospace">{{ dcExpected }}</span></div>
+          <div style="margin-top:8px"><div style="font-size:12px;font-weight:600;color:#5b6781;margin-bottom:6px">Counted cash</div><input value="{{ cashCount }}" onChange="{{ onCashCount }}" type="number" placeholder="Enter counted amount" style="width:100%;border:1px solid #d7deeb;border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none" style-focus="border-color:var(--accent,#2f6df0)"/></div>
+        </div>
+        <div style="display:flex;gap:10px;padding:16px 20px;border-top:1px solid #eef1f6;justify-content:flex-end">
+          <div onClick="{{ closeDayClose }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">Cancel</div>
+          <div onClick="{{ dayCloseGo }}" style="padding:10px 18px;border-radius:8px;background:var(--accent,#2f6df0);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)">Close day &amp; save</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ invoiceOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:560px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(16,24,40,.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #eef1f6">
+          <div style="display:flex;align-items:center;gap:9px;color:#067647;font-size:13.5px;font-weight:600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Sale completed</div>
+          <div onClick="{{ closeInvoice }}" style="cursor:pointer;color:#b9c0cd;font-size:22px" style-hover="color:#b42318">×</div>
+        </div>
+        <div style="padding:22px 24px;overflow-y:auto;flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-weight:700;font-size:17px;letter-spacing:-.2px">Sri Sakthi Medicals</div>
+              <div style="font-size:11.5px;color:#8a94a6;line-height:1.6;margin-top:2px">Perundurai, Erode, TN — 638052<br/>GSTIN 33ABCFS1234K1Z9 · DL TN/ER/20B-21B/4471</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:11px;color:#8a94a6;text-transform:uppercase;letter-spacing:.4px;font-weight:600">Tax Invoice</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;margin-top:2px">{{ inv.no }}</div>
+              <div style="font-size:11.5px;color:#8a94a6;font-family:'IBM Plex Mono',monospace">{{ inv.date }}</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:14px;padding:10px 12px;background:#f7f9fd;border-radius:9px;font-size:12.5px">
+            <span style="color:#5b6781">Billed to <b style="color:#101828">{{ inv.customer }}</b> {{ inv.phone }}</span>
+            <span style="color:#5b6781">Paid via <b style="color:#101828">{{ invPay }}</b></span>
+          </div>
+          <div style="margin-top:14px;border:1px solid #eef1f6;border-radius:10px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:2fr 1.2fr .5fr .8fr 1fr;gap:8px;padding:9px 12px;background:#f7f9fd;font-size:10px;font-weight:700;color:#7a849b;text-transform:uppercase;letter-spacing:.3px"><div>Item</div><div>Batch · HSN</div><div style="text-align:center">Qty</div><div style="text-align:right">Rate</div><div style="text-align:right">Amount</div></div>
+            <sc-for list="{{ invLines }}" as="l" hint-placeholder-count="1">
+              <div style="display:grid;grid-template-columns:2fr 1.2fr .5fr .8fr 1fr;gap:8px;padding:9px 12px;border-top:1px solid #f3f5f9;align-items:center;font-size:12.5px">
+                <div style="font-weight:600">{{ l.name }} <span style="color:#8a94a6;font-weight:400;font-size:11px">GST {{ l.gst }}</span></div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a94a6">{{ l.batch }} · exp {{ l.exp }}<br/>HSN {{ l.hsn }}</div>
+                <div style="text-align:center;font-family:'IBM Plex Mono',monospace">{{ l.qty }}</div>
+                <div style="text-align:right;font-family:'IBM Plex Mono',monospace">{{ l.rate }}</div>
+                <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600">{{ l.amount }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px">
+            <div style="width:240px;display:flex;flex-direction:column;gap:7px;font-size:13px">
+              <div style="display:flex;justify-content:space-between;color:#5b6781"><span>Taxable value</span><span style="font-family:'IBM Plex Mono',monospace">{{ invGross }}</span></div>
+              <div style="display:flex;justify-content:space-between;color:#b42318"><span>Discount</span><span style="font-family:'IBM Plex Mono',monospace">−{{ invDisc }}</span></div>
+              <div style="display:flex;justify-content:space-between;color:#8a94a6"><span>CGST</span><span style="font-family:'IBM Plex Mono',monospace">{{ invCgst }}</span></div>
+              <div style="display:flex;justify-content:space-between;color:#8a94a6"><span>SGST</span><span style="font-family:'IBM Plex Mono',monospace">{{ invSgst }}</span></div>
+              <div style="display:flex;justify-content:space-between;color:#8a94a6"><span>Round off</span><span style="font-family:'IBM Plex Mono',monospace">{{ invRound }}</span></div>
+              <div style="height:1px;background:#eef1f6;margin:2px 0"></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;font-weight:700"><span>Total paid</span><span style="font-family:'IBM Plex Mono',monospace;font-size:19px">{{ invGrand }}</span></div>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:#aab2c2;margin-top:16px">Computed under Tamil Nadu intra-state supply · CGST + SGST. Get well soon — Sri Sakthi Medicals.</div>
+        </div>
+        <div style="display:flex;gap:10px;padding:16px 20px;border-top:1px solid #eef1f6;justify-content:flex-end">
+          <div onClick="{{ closeInvoice }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">New sale</div>
+          <div onClick="{{ printInvoice }}" style="display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;background:var(--accent,#2f6df0);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="filter:brightness(1.05)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print invoice</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(14,27,57,.5);display:flex;align-items:center;justify-content:center;z-index:70;padding:24px">
+      <div style="background:#fff;border-radius:14px;width:400px;max-width:100%;box-shadow:0 24px 60px rgba(16,24,40,.3);padding:22px 24px">
+        <div style="font-weight:600;font-size:16px;margin-bottom:8px">{{ confirmTitle }}</div>
+        <div style="font-size:13.5px;color:#5b6781;line-height:1.55">{{ confirmBody }}</div>
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+          <div onClick="{{ closeConfirm }}" style="padding:10px 16px;border-radius:8px;border:1px solid #e3e8f1;color:#5b6781;font-size:13.5px;font-weight:600;cursor:pointer">Cancel</div>
+          <div onClick="{{ runConfirm }}" style="{{ confirmBtnStyle }}" style-hover="filter:brightness(1.06)">{{ confirmLabel }}</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;padding:13px 20px;border-radius:11px;font-size:14px;font-weight:500;box-shadow:0 12px 34px rgba(16,24,40,.32);display:flex;align-items:center;gap:11px;z-index:50;animation:pdpop .2s ease">
+      <span style="width:8px;height:8px;border-radius:50%;background:#36d07d"></span>{{ toast }}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:760},&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2f6df0&quot;,&quot;options&quot;:[&quot;#2f6df0&quot;,&quot;#0e7490&quot;,&quot;#1f8a4c&quot;,&quot;#6941c6&quot;,&quot;#b54708&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;nearExpiryWindow&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:90,&quot;min&quot;:30,&quot;max&quot;:180,&quot;step&quot;:15,&quot;tsType&quot;:&quot;number&quot;},&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dashboard&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;billing&quot;,&quot;inventory&quot;,&quot;purchase&quot;,&quot;suppliers&quot;,&quot;customers&quot;,&quot;reports&quot;,&quot;settings&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: (this.props && this.props.startView) || 'dashboard',
+    compact: false,
+    billSearch: '',
+    lines: [],
+    discountPct: 0,
+    pay: 'cash',
+    customerId: null,
+    invQuery: '',
+    invFilter: 'all',
+    expanded: {},
+    draftPO: [],
+    report: 'stock',
+    reportCat: 'all',
+    toast: null,
+    custPickerOpen: false,
+    adjustMed: null, adjType: 'damage', adjQty: '', adjReason: '',
+    itemFormOpen: false, editId: null, formErrors: {},
+    form: { name:'', composition:'', mfr:'', schedule:'OTC', hsn:'', gst:'12', rack:'', reorder:'', reorderQty:'', supplier:'Erode Pharma Distributors', batch:'', mfg:'', exp:'', qty:'', cost:'', mrp:'' },
+    invoice: null, confirm: null, offline: false, recvErr: false,
+    receivePO: null, recv: null,
+    rxOpen: false, rx: { prescriber:'', reg:'', patient:'', consent:false, img:false },
+    returnOpen: false, returnInv:'',
+    dayCloseOpen: false, cashCount: '',
+    h1log: [
+      {date:'20 Jun',drug:'Augmentin 625',doctor:'Dr. R. Kumar (TN-44821)',patient:'S. Devi',qty:'10'},
+      {date:'20 Jun',drug:'Azithral 500',doctor:'Dr. P. Menon (TN-39114)',patient:'M. Raja',qty:'6'},
+      {date:'19 Jun',drug:'Augmentin 625',doctor:'Dr. R. Kumar (TN-44821)',patient:'K. Anand',qty:'10'},
+    ],
+    auditLog: [
+      {time:'09:12',user:'Counter',action:'Price change',detail:'Telma 40 MRP 138.0 → 139.5'},
+      {time:'10:41',user:'Owner',action:'Stock write-off',detail:'Ascoril LS · 6 units · expiry'},
+      {time:'12:05',user:'Counter',action:'Refund',detail:'INV-2026-0488 · ₹201.40'},
+    ],
+  };
+
+  today = new Date(2026, 5, 22);
+
+  meds = [
+    { id:'m1', name:'Dolo 650 Tab', composition:'Paracetamol 650mg', mfr:'Micro Labs', hsn:'30049099', gst:12, schedule:'OTC', rack:'A1', reorder:50, reorderQty:200, supplier:'Erode Pharma Distributors', batches:[{batch:'DLO2451',mfg:'Jan 2026',exp:'2027-09-30',qty:210,cost:23.4,mrp:30.9},{batch:'DLO2388',mfg:'Oct 2025',exp:'2027-04-30',qty:130,cost:23.1,mrp:30.9}] },
+    { id:'m2', name:'Pan 40 Tab', composition:'Pantoprazole 40mg', mfr:'Alkem', hsn:'30049069', gst:12, schedule:'H', rack:'B2', reorder:40, reorderQty:150, supplier:'Kongu Medical Agency', batches:[{batch:'PAN7712',mfg:'Dec 2025',exp:'2027-11-30',qty:120,cost:96,mrp:131.5}] },
+    { id:'m3', name:'Augmentin 625 Duo', composition:'Amoxicillin + Clav 625mg', mfr:'GSK', hsn:'30041020', gst:12, schedule:'H1', rack:'C1', reorder:20, reorderQty:60, supplier:'Erode Pharma Distributors', batches:[{batch:'AUG4419',mfg:'Aug 2025',exp:'2026-08-10',qty:18,cost:152,mrp:201.4},{batch:'AUG4502',mfg:'Mar 2026',exp:'2027-02-28',qty:24,cost:152,mrp:201.4}] },
+    { id:'m4', name:'Azithral 500 Tab', composition:'Azithromycin 500mg', mfr:'Alembic', hsn:'30042090', gst:12, schedule:'H1', rack:'C2', reorder:15, reorderQty:60, supplier:'Kongu Medical Agency', batches:[] },
+    { id:'m5', name:'Telma 40 Tab', composition:'Telmisartan 40mg', mfr:'Glenmark', hsn:'30049099', gst:12, schedule:'H', rack:'D3', reorder:30, reorderQty:120, supplier:'Sri Balaji Distributors', batches:[{batch:'TLM9981',mfg:'Nov 2025',exp:'2027-06-30',qty:22,cost:104,mrp:139.5}] },
+    { id:'m6', name:'Glycomet 500 Tab', composition:'Metformin 500mg', mfr:'USV', hsn:'30049099', gst:12, schedule:'H', rack:'D1', reorder:40, reorderQty:150, supplier:'Sri Balaji Distributors', batches:[{batch:'GLY3320',mfg:'Feb 2026',exp:'2027-12-31',qty:95,cost:18.6,mrp:25.4}] },
+    { id:'m7', name:'Crocin Advance Tab', composition:'Paracetamol 500mg', mfr:'GSK', hsn:'30049099', gst:12, schedule:'OTC', rack:'A2', reorder:60, reorderQty:200, supplier:'Erode Pharma Distributors', batches:[{batch:'CRC1180',mfg:'Jan 2026',exp:'2027-08-31',qty:48,cost:22.7,mrp:30.2}] },
+    { id:'m8', name:'Allegra 120 Tab', composition:'Fexofenadine 120mg', mfr:'Sanofi', hsn:'30049099', gst:12, schedule:'H', rack:'E1', reorder:25, reorderQty:80, supplier:'Kongu Medical Agency', batches:[{batch:'ALG5560',mfg:'Dec 2025',exp:'2027-10-31',qty:60,cost:165,mrp:219.8}] },
+    { id:'m9', name:'Shelcal 500 Tab', composition:'Calcium + Vit D3', mfr:'Torrent', hsn:'30045090', gst:12, schedule:'OTC', rack:'E2', reorder:30, reorderQty:100, supplier:'Sri Balaji Distributors', batches:[{batch:'SHL2207',mfg:'Nov 2025',exp:'2027-07-31',qty:75,cost:90,mrp:120.5}] },
+    { id:'m10', name:'Ascoril LS Syrup', composition:'Ambroxol + Levosalbutamol', mfr:'Glenmark', hsn:'30049099', gst:12, schedule:'H', rack:'F1', reorder:20, reorderQty:60, supplier:'Erode Pharma Distributors', batches:[{batch:'ASC8830',mfg:'Jul 2025',exp:'2026-07-30',qty:14,cost:82,mrp:110.2}] },
+    { id:'m11', name:'Montair LC Tab', composition:'Montelukast + Levocetirizine', mfr:'Cipla', hsn:'30049099', gst:12, schedule:'H', rack:'D4', reorder:25, reorderQty:80, supplier:'Kongu Medical Agency', batches:[{batch:'MNT6614',mfg:'Jan 2026',exp:'2027-11-30',qty:40,cost:142,mrp:189.6}] },
+    { id:'m12', name:'Ecosprin 75 Tab', composition:'Aspirin 75mg', mfr:'USV', hsn:'30049099', gst:12, schedule:'H', rack:'D2', reorder:50, reorderQty:200, supplier:'Sri Balaji Distributors', batches:[{batch:'ECO1042',mfg:'Dec 2025',exp:'2027-09-30',qty:30,cost:7.4,mrp:10.3}] },
+    { id:'m13', name:'Thyronorm 50mcg Tab', composition:'Thyroxine 50mcg', mfr:'Abbott', hsn:'30043900', gst:12, schedule:'H', rack:'E3', reorder:20, reorderQty:80, supplier:'Kongu Medical Agency', batches:[] },
+    { id:'m14', name:'Zincovit Tab', composition:'Multivitamin + Zinc', mfr:'Apex', hsn:'30045090', gst:12, schedule:'OTC', rack:'A3', reorder:30, reorderQty:120, supplier:'Erode Pharma Distributors', batches:[{batch:'ZNC4471',mfg:'Feb 2026',exp:'2028-01-31',qty:110,cost:71,mrp:95.4}] },
+  ];
+
+  customers = [
+    { id:'c1', name:'Murugan R',  phone:'+91 98421 33102', khata:0,   visits:36, usual:['m5','m12','m6'] },
+    { id:'c2', name:'Lakshmi S',  phone:'+91 99655 80417', khata:420, visits:21, usual:['m13','m9'] },
+    { id:'c3', name:'Karthik M',  phone:'+91 90031 27788', khata:0,   visits:14, usual:['m11','m8'] },
+    { id:'c4', name:'Anitha P',   phone:'+91 94432 56091', khata:0,   visits:28, usual:['m14','m9'] },
+    { id:'c5', name:'Senthil K',  phone:'+91 97910 44260', khata:180, visits:42, usual:['m2','m1'] },
+  ];
+
+  pos = [
+    { id:'PO-2026-014', supplier:'Erode Pharma Distributors', date:'19 Jun 2026', status:'Sent', items:[{medId:'m1',qty:200,cost:23.4},{medId:'m3',qty:60,cost:152},{medId:'m7',qty:200,cost:22.7},{medId:'m10',qty:60,cost:82},{medId:'m14',qty:120,cost:71}] },
+    { id:'PO-2026-013', supplier:'Kongu Medical Agency', date:'14 Jun 2026', status:'Received', items:[{medId:'m4',qty:60,cost:75},{medId:'m8',qty:80,cost:165},{medId:'m13',qty:80,cost:140}] },
+    { id:'PO-2026-012', supplier:'Sri Balaji Distributors', date:'09 Jun 2026', status:'Received', items:[{medId:'m6',qty:150,cost:18.6},{medId:'m12',qty:200,cost:7.4}] },
+  ];
+
+  suppliers = [
+    { id:'s1', name:'Erode Pharma Distributors', gstin:'33AABCE4521R1Z2', contact:'R. Saravanan', phone:'+91 99445 21100', terms:'30 days', lead:2, adherence:96, short:1, openPOs:1 },
+    { id:'s2', name:'Kongu Medical Agency', gstin:'33AALFK7782M1Z8', contact:'M. Bhuvana', phone:'+91 98655 70021', terms:'21 days', lead:3, adherence:88, short:3, openPOs:0 },
+    { id:'s3', name:'Sri Balaji Distributors', gstin:'33AAGFS1199L1Z5', contact:'K. Prabhu', phone:'+91 90030 44551', terms:'15 days', lead:2, adherence:92, short:2, openPOs:0 },
+  ];
+
+  // ---------- helpers ----------
+  stockOf(m){ return m.batches.reduce((s,b)=>s+b.qty,0); }
+  daysTo(exp){ return Math.round((new Date(exp)-this.today)/86400000); }
+  fefo(m){ const live=m.batches.filter(b=>b.qty>0 && this.daysTo(b.exp)>0).sort((a,b)=>new Date(a.exp)-new Date(b.exp)); return live[0]||null; }
+  earliest(m){ const live=m.batches.filter(b=>b.qty>0).sort((a,b)=>new Date(a.exp)-new Date(b.exp)); return live[0]||null; }
+  money(n){ return '₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  money0(n){ return '₹'+Math.round(Number(n)).toLocaleString('en-IN'); }
+  expFmt(d){ const dt=new Date(d); return String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear(); }
+  status(m){ const win=(this.props&&this.props.nearExpiryWindow)||90; const s=this.stockOf(m); const ne=m.batches.some(b=>{const d=this.daysTo(b.exp);return b.qty>0&&d>0&&d<=win;}); if(s===0) return 'out'; if(ne) return 'nearexp'; if(s<=m.reorder) return 'low'; return 'ok'; }
+  schedStyle(s){ const map={H1:'#b42318:#fdeceb',H:'#b54708:#fdf3e7','X':'#6941c6:#f4eefc',OTC:'#067647:#eaf6ee'}; const [c,b]=(map[s]||'#5b6781:#f1f4fa').split(':'); return `display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.3px;border-radius:4px;padding:1px 5px;vertical-align:middle;color:${c};background:${b}`; }
+  toastMsg(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:null}),2200); }
+
+  // ---------- actions ----------
+  go(v){ return ()=>this.setState({view:v}); }
+  addLine(id){ const m=this.meds.find(x=>x.id===id); const b=this.fefo(m); if(!b){ this.toastMsg(m.name+' is out of sellable stock'); return; } const ex=this.state.lines.find(l=>l.id===id&&l.batch===b.batch); let lines; if(ex){ lines=this.state.lines.map(l=>l===ex?{...l,qty:l.qty+1}:l); } else { lines=[...this.state.lines,{id,name:m.name,composition:m.composition,schedule:m.schedule,batch:b.batch,exp:b.exp,rate:b.mrp,gst:m.gst,qty:1,disc:0}]; } this.setState({lines,billSearch:''}); }
+  chQty(i,d){ const lines=this.state.lines.map((l,idx)=>idx===i?{...l,qty:Math.max(1,l.qty+d)}:l); this.setState({lines}); }
+  rmLine(i){ this.setState({lines:this.state.lines.filter((_,idx)=>idx!==i)}); }
+  selectCust(id){ this.setState({customerId:id}); }
+  rebill(id){ const c=this.customers.find(x=>x.id===id); const lines=[]; c.usual.forEach(mid=>{ const m=this.meds.find(x=>x.id===mid); const b=this.fefo(m); if(b) lines.push({id:mid,name:m.name,composition:m.composition,schedule:m.schedule,batch:b.batch,exp:b.exp,rate:b.mrp,gst:m.gst,qty:1,disc:0}); }); this.setState({customerId:id,lines,view:'billing'}); this.toastMsg('Pulled '+lines.length+' usual items for '+c.name); }
+  setLineDisc(i,val){ const v=Math.max(0,Math.min(100,Number(val)||0)); this.setState(s=>({lines:s.lines.map((l,idx)=>idx===i?{...l,disc:v}:l)})); }
+  checkout(){ if(this.state.lines.length===0){ this.toastMsg('Add items before completing the sale'); return; } const needsRx=this.state.lines.some(l=>l.schedule==='H1'||l.schedule==='H'); if(needsRx){ this.setState({rxOpen:true}); return; } this.finishSale(); }
+  finishSale(){
+    const t=this.totals(); const cust=this.customers.find(c=>c.id===this.state.customerId)||null;
+    this._invNo=(this._invNo||491)+1;
+    const inv={ no:'INV-2026-'+String(this._invNo).padStart(4,'0'), date:'22 Jun 2026 · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+      customer: cust?cust.name:'Walk-in customer', phone: cust?cust.phone:'',
+      pay: this.state.pay, lines: this.state.lines.map(l=>({ name:l.name, batch:l.batch, exp:this.expFmt(l.exp), hsn:(this.meds.find(m=>m.id===l.id)||{}).hsn||'', qty:l.qty, rate:l.rate, gst:l.gst, disc:l.disc||0, amount:l.qty*l.rate*(1-(l.disc||0)/100) })),
+      gross:t.gross, disc:t.disc, cgst:t.cgst, sgst:t.sgst, round:t.round, grand:t.grand };
+    // decrement stock FEFO from the picked batch
+    this.state.lines.forEach(l=>{ const m=this.meds.find(x=>x.id===l.id); if(!m)return; const b=m.batches.find(x=>x.batch===l.batch); if(b) b.qty=Math.max(0,b.qty-l.qty); });
+    this.pushAudit('Sale', inv.no+' · '+this.money0(t.grand)+' · '+this.state.pay.toUpperCase());
+    this.setState({lines:[],customerId:null,discountPct:0,invoice:inv});
+  }
+  closeInvoice(){ this.setState({invoice:null}); }
+  printInvoice(){ this.toastMsg('Sent to printer'); }
+  // ---------- confirm dialog ----------
+  askConfirm(cfg){ this.setState({confirm:cfg}); }
+  runConfirm(){ const c=this.state.confirm; this.setState({confirm:null}); if(c&&c.action) this[c.action](c.arg); }
+  closeConfirm(){ this.setState({confirm:null}); }
+  doClearBill(){ this.setState({lines:[]}); }
+  addPO(id){ if(this.state.draftPO.includes(id)) return; this.setState({draftPO:[...this.state.draftPO,id]}); this.toastMsg('Added to draft PO'); }
+  rmPO(id){ this.setState({draftPO:this.state.draftPO.filter(x=>x!==id)}); }
+  createPO(){ if(this.state.draftPO.length===0) return; this.pushAudit('Purchase order','Draft PO generated · PDF'); this.toastMsg('PO generated · PDF exported'); this.setState({draftPO:[]}); }
+
+  // ---------- supply chain ----------
+  openReceive(id){ const po=this.pos.find(p=>p.id===id); const recv={}; po.items.forEach(it=>{ recv[it.medId]={qty:String(it.qty), batch:'', exp:'2027-12-31', free:'0'}; }); this.setState({receivePO:id, recv}); }
+  setRecv(medId,field,val){ this.setState(s=>({recv:{...s.recv,[medId]:{...s.recv[medId],[field]:val}}})); }
+  postReceipt(){ const po=this.pos.find(p=>p.id===this.state.receivePO); const recv=this.state.recv; let n=0; const missing=po.items.some(it=>{ const r=recv[it.medId]; return !r.batch.trim() && (Number(r.qty)||0)>0; }); if(missing){ this.setState({recvErr:true}); this.toastMsg('Enter a batch number for every received line'); return; } po.items.forEach(it=>{ const r=recv[it.medId]; const qty=Number(r.qty)||0; if(qty<=0) return; const m=this.meds.find(x=>x.id===it.medId); m.batches.push({batch:(r.batch||('B'+Math.floor(Math.random()*9000+1000))), mfg:'Jun 2026', exp:(r.exp||'2027-12-31'), qty:qty+(Number(r.free)||0), cost:it.cost, mrp:Math.round(it.cost/0.74*10)/10}); n+=qty; }); po.status='Received'; this.pushAudit('Goods receipt', po.id+' · '+n+' units in'); this.toastMsg('Receipt posted · stock updated'); this.setState({receivePO:null, recv:null, recvErr:false}); }
+  poReturn(){ this.pushAudit('Purchase return','Near-expiry return raised to supplier'); this.toastMsg('Purchase return recorded'); }
+  // ---------- add / edit medicine ----------
+  openItemForm(id){
+    const base={ itemFormOpen:true, formErrors:{} };
+    if(id){ const m=this.meds.find(x=>x.id===id); this.setState({ ...base, editId:id, form:{ name:m.name, composition:m.composition, mfr:m.mfr, schedule:m.schedule, hsn:m.hsn, gst:String(m.gst), rack:m.rack, reorder:String(m.reorder), reorderQty:String(m.reorderQty), supplier:m.supplier, batch:'', mfg:'', exp:'', qty:'', cost:'', mrp:'' } }); }
+    else { this.setState({ ...base, editId:null, form:{ name:'', composition:'', mfr:'', schedule:'OTC', hsn:'', gst:'12', rack:'', reorder:'', reorderQty:'', supplier:'Erode Pharma Distributors', batch:'', mfg:'', exp:'', qty:'', cost:'', mrp:'' } }); }
+  }
+  setForm(field,val){ this.setState(s=>({form:{...s.form,[field]:val}, formErrors:{...s.formErrors,[field]:undefined}})); }
+  saveItem(){
+    const f=this.state.form; const e={};
+    if(!f.name.trim()) e.name='Medicine name is required';
+    if(f.gst && isNaN(Number(f.gst))) e.gst='Numeric only';
+    if(f.qty && Number(f.qty)>0){
+      if(!f.exp) e.exp='Expiry required when adding stock';
+      else if(new Date(f.exp) <= this.today) e.exp='Expiry must be a future date';
+      if(f.mrp && f.cost && Number(f.mrp) < Number(f.cost)) e.mrp='MRP is below cost';
+      if(this.state.editId && f.batch && this.meds.find(m=>m.id===this.state.editId).batches.some(b=>b.batch===f.batch.trim())) e.batch='Batch already exists for this item';
+    }
+    if(Object.keys(e).length){ this.setState({formErrors:e}); this.toastMsg('Check the highlighted fields'); return; }
+    const batch = (f.qty&&Number(f.qty)>0) ? [{ batch:(f.batch||('B'+Math.floor(Math.random()*9000+1000))), mfg:(f.mfg||'Jun 2026'), exp:(f.exp||'2027-12-31'), qty:Number(f.qty)||0, cost:Number(f.cost)||0, mrp:Number(f.mrp)||0 }] : [];
+    if(this.state.editId){
+      const m=this.meds.find(x=>x.id===this.state.editId);
+      Object.assign(m,{ name:f.name, composition:f.composition, mfr:f.mfr, schedule:f.schedule, hsn:f.hsn, gst:Number(f.gst)||12, rack:f.rack, reorder:Number(f.reorder)||0, reorderQty:Number(f.reorderQty)||0, supplier:f.supplier });
+      if(batch.length) m.batches.push(batch[0]);
+      this.pushAudit('Item updated', f.name+(batch.length?(' · +'+batch[0].qty+' units'):''));
+      this.toastMsg('Item updated'+(batch.length?' · stock added':''));
+    } else {
+      const id='m'+(this.meds.length+1)+'_'+Date.now().toString().slice(-4);
+      this.meds.push({ id, name:f.name, composition:f.composition, mfr:f.mfr, hsn:f.hsn, gst:Number(f.gst)||12, schedule:f.schedule, rack:f.rack, reorder:Number(f.reorder)||0, reorderQty:Number(f.reorderQty)||0, supplier:f.supplier, batches:batch });
+      this.pushAudit('Item added', f.name+' · '+f.supplier+(batch.length?(' · '+batch[0].qty+' units'):''));
+      this.toastMsg('New item added to inventory');
+    }
+    this.setState({ itemFormOpen:false, editId:null });
+  }
+  // ---------- stock adjustment ----------
+  openAdjust(id){ this.setState({adjustMed:id, adjType:'damage', adjQty:'', adjReason:''}); }
+  tryAdjust(){ const m=this.meds.find(x=>x.id===this.state.adjustMed); const q=Number(this.state.adjQty)||0; const stock=this.stockOf(m); if(q<=0){ this.toastMsg('Enter a quantity greater than zero'); return; } if(q>stock){ this.toastMsg('Cannot remove more than '+stock+' in stock'); return; } const labels={damage:'Damage',expiry:'Expiry write-off',count:'Count correction'}; this.askConfirm({ title:'Confirm stock removal', body:'Remove '+q+' unit(s) of '+m.name+' as '+labels[this.state.adjType]+'? This reduces sellable stock and is logged to the audit trail.', confirmLabel:'Remove '+q, danger:true, action:'postAdjust' }); }
+  postAdjust(){ const m=this.meds.find(x=>x.id===this.state.adjustMed); let q=Number(this.state.adjQty)||0; const before=this.stockOf(m); if(q>0){ let rem=q; m.batches.sort((a,b)=>new Date(a.exp)-new Date(b.exp)); m.batches.forEach(b=>{ const take=Math.min(b.qty,rem); b.qty-=take; rem-=take; }); } this.pushAudit('Stock adjustment', m.name+' · −'+q+' · '+this.state.adjType+' ('+before+'→'+this.stockOf(m)+')'); this.toastMsg('Adjustment posted'); this.setState({adjustMed:null}); }
+  // ---------- returns / rx / day-close ----------
+  pushAudit(action,detail){ const t=new Date(); const time=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'); this.setState(s=>({auditLog:[{time,user:'Counter',action,detail},...s.auditLog]})); }
+  openReturn(){ this.setState({returnOpen:true, returnInv:'INV-2026-0491'}); }
+  postReturn(){ this.pushAudit('Sales return','Refund · stock restored to batch ('+(this.state.returnInv||'invoice')+')'); this.toastMsg('Sales return processed · stock restored'); this.setState({returnOpen:false}); }
+  setRx(field,val){ this.setState(s=>({rx:{...s.rx,[field]:val}})); }
+  submitRx(){ const r=this.state.rx; if(!r.consent){ this.toastMsg('Capture DPDP consent to continue'); return; } const sched=this.state.lines.filter(l=>l.schedule==='H1'||l.schedule==='H'); const entries=sched.map(l=>({date:'22 Jun',drug:l.name.replace(/ (Tab|Syrup|Duo).*/,''),doctor:r.prescriber+(r.reg?' ('+r.reg+')':''),patient:r.patient,qty:String(l.qty)})); this.setState(s=>({h1log:[...entries,...s.h1log], rxOpen:false, rx:{prescriber:'',reg:'',patient:'',consent:false,img:false}})); this.finishSale(); }
+  dayClose(){ this.pushAudit('Day close','Cash reconciled · drawer counted'); this.toastMsg('Day closed · summary saved'); this.setState({dayCloseOpen:false, cashCount:''}); }
+
+  // ---------- totals ----------
+  totals(){
+    const L=this.state.lines, bd=this.state.discountPct/100;
+    let gross=0, net=0, tax=0;
+    L.forEach(l=>{ const g=l.qty*l.rate; gross+=g; const taxable=g*(1-(l.disc||0)/100)*(1-bd); net+=taxable; tax+=taxable*l.gst/100; });
+    const cgst=tax/2, sgst=tax/2;
+    const pre=net+tax;
+    const grand=Math.round(pre);
+    return {gross,disc:gross-net,cgst,sgst,round:grand-pre,grand};
+  }
+
+  searchRef = React.createRef();
+  onKey = (e)=>{
+    if(e.key==='F2'){ e.preventDefault(); this.setState({view:'billing'}); return; }
+    if(this.state.view!=='billing') return;
+    if(e.key==='F3'){ e.preventDefault(); this.searchRef.current && this.searchRef.current.focus(); }
+    else if(e.key==='F4'){ e.preventDefault(); this.setState(s=>({custPickerOpen:!s.custPickerOpen})); }
+    else if(e.key==='F12'){ e.preventDefault(); this.checkout(); }
+    else if(e.key==='Escape'){ this.setState({custPickerOpen:false}); }
+  };
+  applyAccent(){ try{ document.documentElement.style.setProperty('--accent', (this.props && this.props.accentColor) || ('#'+'2f6df0')); }catch(e){} }
+  componentDidMount(){ window.addEventListener('keydown', this.onKey); this.applyAccent(); }
+  componentDidUpdate(){ this.applyAccent(); }
+  componentWillUnmount(){ window.removeEventListener('keydown', this.onKey); }
+
+  renderVals(){
+    const S=this.state, compact=S.compact;
+    const win=(this.props&&this.props.nearExpiryWindow)||90, halfWin=Math.round(win/2);
+    const navBase='display:flex;align-items:center;gap:12px;padding:10px 14px;margin:2px 10px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;position:relative;white-space:nowrap;transition:background .15s,color .15s;';
+    const navOn=navBase+'color:#fff;background:#1f4fc0;';
+    const navOff=navBase+'color:#9aa7c7;';
+    const nav=(v)=> S.view===v?navOn:navOff;
+
+    // alerts
+    const low=this.meds.filter(m=>{const s=this.stockOf(m);return s>0&&s<=m.reorder;});
+    const out=this.meds.filter(m=>this.stockOf(m)===0);
+    const nearBatches=[];
+    this.meds.forEach(m=>m.batches.forEach(b=>{const d=this.daysTo(b.exp);if(b.qty>0&&d>0&&d<=win)nearBatches.push({m,b,d});}));
+    nearBatches.sort((a,b)=>a.d-b.d);
+    const stockVal=this.meds.reduce((s,m)=>s+m.batches.reduce((t,b)=>t+b.qty*b.cost,0),0);
+    const expVal=nearBatches.reduce((s,x)=>s+x.b.qty*x.b.cost,0);
+
+    const reorderList=[...low,...out].map(m=>{
+      const inPO=S.draftPO.includes(m.id); const s=this.stockOf(m);
+      return { name:m.name, composition:m.composition, supplier:m.supplier, stock:s, reorder:m.reorder,
+        stockColor: s===0?'#b42318':'#b54708',
+        poBtnLabel: inPO?'✓ Queued':'Add to PO',
+        poBtnStyle: 'flex:none;padding:7px 13px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;'+(inPO?'background:#eaf6ee;color:#067647;border:1px solid #c3e9d1':'background:var(--accent,#2f6df0);color:#fff'),
+        addPO: ()=>this.addPO(m.id) };
+    });
+
+    const expiryList=nearBatches.map(x=>{ const col=x.d<=halfWin?'#b42318':'#b54708';
+      return { name:x.m.name, batch:x.b.batch, qty:x.b.qty, exp:this.expFmt(x.b.exp), days:x.d, expColor:col, dot:col }; });
+
+    // billing search
+    const q=S.billSearch.trim().toLowerCase();
+    const searchResults=(q?this.meds.filter(m=>(m.name+' '+m.composition).toLowerCase().includes(q)):[]).slice(0,6).map(m=>{
+      const s=this.stockOf(m); const f=this.fefo(m);
+      return { name:m.name, composition:m.composition, rack:m.rack, schedule:m.schedule, schedStyle:this.schedStyle(m.schedule),
+        stockLabel: s===0?'Out of stock':s+' in stock', stockColor: s===0?'#b42318':(s<=m.reorder?'#b54708':'#067647'),
+        fefoExp: f?this.expFmt(f.exp):'—', mrp:this.money(f?f.mrp:m.batches[0]?m.batches[0].mrp:0),
+        add: ()=>this.addLine(m.id) };
+    });
+
+    const billLines=S.lines.map((l,i)=>({ name:l.name, composition:l.composition, schedule:l.schedule, schedStyle:this.schedStyle(l.schedule),
+      batch:l.batch, exp:this.expFmt(l.exp), expColor: this.daysTo(l.exp)<=win?'#b54708':'#8a94a6',
+      qty:l.qty, rate:this.money(l.rate), disc:l.disc||0, amount:this.money(l.qty*l.rate*(1-(l.disc||0)/100)),
+      setDisc:(e)=>this.setLineDisc(i, e.target.value),
+      inc:()=>this.chQty(i,1), dec:()=>this.chQty(i,-1), remove:()=>this.rmLine(i) }));
+
+    const t=this.totals();
+    const cust=this.customers.find(c=>c.id===S.customerId)||null;
+    const initials=(n)=>n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+    const regulars=this.customers.map(c=>({ name:c.name, phone:c.phone, initials:initials(c.name), hasKhata:c.khata>0, khata:'₹'+c.khata+' due', select:()=>this.selectCust(c.id) }));
+
+    const payStyle=(k)=>'flex:1;text-align:center;padding:10px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;border:1.5px solid '+(S.pay===k?'var(--accent,#2f6df0);background:#e8f0fe;color:var(--accent,#2f6df0)':'#e3e8f1;background:#fff;color:#5b6781');
+    const payDark=(k)=>'flex:1;text-align:center;padding:10px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .12s;'+(S.pay===k?'background:#fff;color:#0e1b39':'color:#b6c1da;border:1px solid rgba(255,255,255,.2)');
+    const regularsCompact=this.customers.map(c=>({ name:c.name, phone:c.phone, initials:initials(c.name), hasKhata:c.khata>0, khata:'₹'+c.khata+' due', select:()=>this.setState({customerId:c.id,custPickerOpen:false}) }));
+
+    // inventory
+    const counts={ all:this.meds.length, low:low.length, out:out.length, nearexp:this.meds.filter(m=>this.status(m)==='nearexp').length, ok:this.meds.filter(m=>this.status(m)==='ok').length };
+    const fLabels=[['all','All'],['ok','In stock'],['low','Low'],['out','Out'],['nearexp','Near-expiry']];
+    const invFilters=fLabels.map(([k,lab])=>({ label:lab, count:counts[k], select:()=>this.setState({invFilter:k}),
+      style:'padding:7px 12px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;'+(S.invFilter===k?'background:var(--accent,#2f6df0);color:#fff':'color:#5b6781') }));
+    const iq=S.invQuery.trim().toLowerCase();
+    const stStyle=(st)=>{ const m={ok:'#067647:#eaf6ee:In stock',low:'#b54708:#fdf3e7:Low stock',out:'#b42318:#fdeceb:Out of stock',nearexp:'#b42318:#fdeceb:Near-expiry'}[st]; const [c,bg,lab]=m.split(':'); return {style:`display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:3px 9px;color:${c};background:${bg}`,label:lab}; };
+    const invRows=this.meds.filter(m=>{ const st=this.status(m); const okFilter=S.invFilter==='all'||S.invFilter===st; const okQ=!iq||(m.name+' '+m.composition+' '+m.rack).toLowerCase().includes(iq); return okFilter&&okQ; }).map(m=>{
+      const st=this.status(m); const ss=stStyle(st); const s=this.stockOf(m); const e=this.earliest(m); const exp=S.expanded[m.id];
+      return { name:m.name, composition:m.composition, mfr:m.mfr, rack:m.rack, schedule:m.schedule, schedStyle:this.schedStyle(m.schedule), hsn:m.hsn,
+        stock:s, stockColor: s===0?'#b42318':(s<=m.reorder?'#b54708':'#101828'), mrp:this.money(e?e.mrp:m.batches[0]?m.batches[0].mrp:0),
+        earliestExp: e?this.expFmt(e.exp):'—', expColor: e&&this.daysTo(e.exp)<=win?'#b54708':'#5b6781',
+        statusStyle:ss.style, statusLabel:ss.label, expanded:!!exp, caret: exp?'rotate(90deg)':'rotate(0deg)',
+        toggle:()=>this.setState({expanded:{...S.expanded,[m.id]:!exp}}),
+        adjust:()=>this.openAdjust(m.id),
+        edit:()=>this.openItemForm(m.id),
+        supplier:m.supplier,
+        batches: m.batches.length?m.batches.map(b=>{ const d=this.daysTo(b.exp); return { batch:b.batch, mfg:b.mfg, exp:this.expFmt(b.exp), days: d<0?'expired':d+'d', expColor: d<0?'#b42318':(d<=win?'#b54708':'#067647'), qty:b.qty, cost:this.money(b.cost), mrp:this.money(b.mrp) }; }):[] };
+    });
+
+    // PO
+    const poStatusStyle=(s)=>{ const m={Sent:'var(--accent,#2f6df0):#e8f0fe',Received:'#067647:#eaf6ee',Draft:'#5b6781:#f1f4fa'}[s]; const [c,bg]=m.split(':'); return `font-size:11.5px;font-weight:600;border-radius:6px;padding:4px 10px;color:${c};background:${bg}`; };
+    const poList=this.pos.map(p=>{ const val=p.items.reduce((s,it)=>s+it.qty*it.cost,0); return { id:p.id, supplier:p.supplier, lines:p.items.length, date:p.date, value:this.money0(val), status:p.status, statusStyle:poStatusStyle(p.status), canReceive:p.status==='Sent', receiveStyle:'flex:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;background:var(--accent,#2f6df0);color:#fff', receive:()=>this.openReceive(p.id) }; });
+    const draftLines=S.draftPO.map(id=>{ const m=this.meds.find(x=>x.id===id); const val=m.reorderQty*m.batches[0]?.cost||m.reorderQty*(m.batches[0]?m.batches[0].cost:0); const cost=(m.batches[0]?m.batches[0].cost:m.reorder); const v=m.reorderQty*cost; return { name:m.name, supplier:m.supplier, qty:m.reorderQty, value:this.money0(v), remove:()=>this.rmPO(id), _v:v }; });
+    const draftValue=this.money0(draftLines.reduce((s,d)=>s+d._v,0));
+
+    // customers
+    const custCards=this.customers.map(c=>({ name:c.name, phone:c.phone, initials:initials(c.name), visits:c.visits,
+      khata: c.khata>0?'₹'+c.khata:'₹0', khataColor: c.khata>0?'#b54708':'#067647', khataBg: c.khata>0?'#fdf3e7':'#f7f9fd',
+      usual: c.usual.map(id=>this.meds.find(m=>m.id===id).name.replace(/ (Tab|Syrup|Duo).*$/,'')).join(', '),
+      rebill:()=>this.rebill(c.id) }));
+
+    // reports
+    const reportDefs={
+      stock:{label:'Current Stock & Valuation',desc:'On-hand quantity and cost value by item'},
+      lowstock:{label:'Low / Out of Stock',desc:'Items at or below reorder level'},
+      expiry:{label:'Near-Expiry & Expired',desc:'Batches inside the '+win+'-day window'},
+      sales:{label:'Sales (Day / Item)',desc:'Billed value and quantity'},
+      purchases:{label:'Purchases',desc:'Goods received against POs'},
+      supplier:{label:'Supplier-wise Purchase',desc:'Spend grouped by distributor'},
+      gst:{label:'GST Summary',desc:'CGST / SGST collected by rate'},
+      h1:{label:'Schedule H1 Register',desc:'Statutory register · retained 3 years'},
+    };
+    const reportTabs=Object.keys(reportDefs).map(k=>({ label:reportDefs[k].label, desc:reportDefs[k].desc, select:()=>this.setState({report:k}),
+      style:'border:1px solid '+(S.report===k?'var(--accent,#2f6df0);background:#f4f8ff':'#e3e8f1;background:#fff')+';border-radius:10px;padding:11px 13px;cursor:pointer' }));
+
+    const rAlignR='text-align:right;';
+    let reportCols, reportHead, reportRows;
+    const mono='font-family:\'IBM Plex Mono\',monospace;';
+    if(S.report==='stock'||S.report==='lowstock'){
+      let src = S.report==='lowstock'?[...low,...out]:this.meds;
+      if(S.reportCat!=='all') src=src.filter(m=>m.schedule===S.reportCat);
+      reportCols='2.4fr 1fr 1fr 1fr 1fr'; reportHead=[{label:'Medicine'},{label:'Schedule'},{label:'Qty',align:rAlignR},{label:'Cost val',align:rAlignR},{label:'MRP val',align:rAlignR}];
+      reportRows=src.map(m=>{ const s=this.stockOf(m); const cv=m.batches.reduce((t,b)=>t+b.qty*b.cost,0); const mv=m.batches.reduce((t,b)=>t+b.qty*b.mrp,0);
+        return { cells:[ {text:m.name,style:'font-weight:600'}, {text:m.schedule,style:'color:#5b6781'}, {text:String(s),style:mono+rAlignR+(s<=m.reorder?'color:#b54708;font-weight:600':'')}, {text:this.money0(cv),style:mono+rAlignR}, {text:this.money0(mv),style:mono+rAlignR} ] }; });
+    } else if(S.report==='expiry'){
+      reportCols='2.2fr 1.2fr 1fr 1fr 1fr'; reportHead=[{label:'Medicine'},{label:'Batch'},{label:'Expiry'},{label:'Qty',align:rAlignR},{label:'Days',align:rAlignR}];
+      reportRows=nearBatches.map(x=>({ cells:[ {text:x.m.name,style:'font-weight:600'}, {text:x.b.batch,style:mono+'color:#5b6781'}, {text:this.expFmt(x.b.exp),style:mono+(x.d<=45?'color:#b42318':'color:#b54708')}, {text:String(x.b.qty),style:mono+rAlignR}, {text:x.d+'d',style:mono+rAlignR+(x.d<=45?'color:#b42318;font-weight:600':'color:#b54708')} ] }));
+    } else if(S.report==='gst'){
+      reportCols='1.5fr 1fr 1fr 1fr 1fr'; reportHead=[{label:'GST rate'},{label:'Taxable',align:rAlignR},{label:'CGST',align:rAlignR},{label:'SGST',align:rAlignR},{label:'Total tax',align:rAlignR}];
+      const rows=[['12%',148200,8892,8892],['5%',32400,810,810],['18%',9600,864,864]];
+      reportRows=rows.map(r=>({ cells:[ {text:r[0],style:'font-weight:600'}, {text:this.money0(r[1]),style:mono+rAlignR}, {text:this.money0(r[2]),style:mono+rAlignR}, {text:this.money0(r[3]),style:mono+rAlignR}, {text:this.money0(r[2]+r[3]),style:mono+rAlignR+'font-weight:600'} ] }));
+    } else if(S.report==='supplier'){
+      reportCols='2.4fr 1fr 1fr 1fr'; reportHead=[{label:'Supplier'},{label:'POs',align:rAlignR},{label:'Items',align:rAlignR},{label:'Spend',align:rAlignR}];
+      const rows=[['Erode Pharma Distributors',6,42,84200],['Kongu Medical Agency',4,28,61350],['Sri Balaji Distributors',5,33,52780]];
+      reportRows=rows.map(r=>({ cells:[ {text:r[0],style:'font-weight:600'}, {text:String(r[1]),style:mono+rAlignR}, {text:String(r[2]),style:mono+rAlignR}, {text:this.money0(r[3]),style:mono+rAlignR+'font-weight:600'} ] }));
+    } else if(S.report==='h1'){
+      reportCols='1fr 1.6fr 1.6fr 1.4fr 0.8fr'; reportHead=[{label:'Date'},{label:'Drug'},{label:'Prescriber (Reg.)'},{label:'Patient'},{label:'Qty',align:rAlignR}];
+      reportRows=S.h1log.map(r=>({ cells:[ {text:r.date,style:mono+'color:#5b6781'}, {text:r.drug,style:'font-weight:600'}, {text:r.doctor,style:'font-size:12px;color:#5b6781'}, {text:r.patient}, {text:r.qty,style:mono+rAlignR} ] }));
+    } else { // sales / purchases
+      reportCols='1.4fr 2fr 1fr 1fr'; reportHead=[{label:'Date'},{label:'Reference'},{label:'Items',align:rAlignR},{label:'Value',align:rAlignR}];
+      const rows = S.report==='sales'
+        ? [['22 Jun','47 bills',132,18420],['21 Jun','52 bills',148,16380],['20 Jun','44 bills',121,15290]]
+        : [['19 Jun','PO-2026-014',8,24180],['14 Jun','PO-2026-013',5,16740],['09 Jun','PO-2026-012',6,11320]];
+      reportRows=rows.map(r=>({ cells:[ {text:r[0],style:mono+'color:#5b6781'}, {text:r[1],style:'font-weight:600'}, {text:String(r[2]),style:mono+rAlignR}, {text:this.money0(r[3]),style:mono+rAlignR+'font-weight:600'} ] }));
+    }
+
+    const titles={ dashboard:['Dashboard','Tuesday, 22 June 2026 · counter overview'], billing:['Billing','Fast counter checkout · FEFO + GST'], inventory:['Inventory','Medicine master · batch & expiry'], purchase:['Purchase Orders','Reorder & goods receipt'], suppliers:['Suppliers','Distributor master · performance'], customers:['Customers','Regulars · history & khata'], reports:['Reports','Export to Excel & PDF'], settings:['Settings','Shop, defaults & data safety'] };
+
+    const winLabel=win+' days';
+    const supplierCards=this.suppliers.map(sp=>({ name:sp.name, gstin:sp.gstin, contact:sp.contact+' · '+sp.phone, terms:sp.terms, lead:sp.lead+' days', adherence:sp.adherence+'%', adherenceColor: sp.adherence>=92?'#067647':(sp.adherence>=85?'#b54708':'#b42318'), short:sp.short, openPOs:sp.openPOs, initials:sp.name.split(' ').map(w=>w[0]).slice(0,2).join('') }));
+    const recvPO=this.pos.find(p=>p.id===S.receivePO)||null;
+    const recvLines=recvPO?recvPO.items.map(it=>{ const m=this.meds.find(x=>x.id===it.medId); const r=(S.recv&&S.recv[it.medId])||{qty:String(it.qty),batch:'',exp:'2027-12-31',free:'0'}; return { name:m.name, ordered:it.qty, qty:r.qty, batch:r.batch, exp:r.exp, free:r.free, setQty:(e)=>this.setRecv(it.medId,'qty',e.target.value), setBatch:(e)=>this.setRecv(it.medId,'batch',e.target.value), setExp:(e)=>this.setRecv(it.medId,'exp',e.target.value) }; }):[];
+    const adjMed=this.meds.find(x=>x.id===S.adjustMed)||null;
+    const adjTypes=[['damage','Damage'],['expiry','Expiry write-off'],['count','Count correction']].map(([k,lab])=>({ label:lab, select:()=>this.setState({adjType:k}), style:'flex:1;text-align:center;padding:8px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid '+(S.adjType===k?'var(--accent,#2f6df0);background:#e8f0fe;color:var(--accent,#2f6df0)':'#e3e8f1;color:#5b6781') }));
+    const rxSchedList=S.lines.filter(l=>l.schedule==='H1'||l.schedule==='H').map(l=>({name:l.name,schedule:l.schedule,schedStyle:this.schedStyle(l.schedule),qty:l.qty}));
+    const reportCats=[['all','All'],['H1','H1'],['H','H'],['OTC','OTC']].map(([k,lab])=>({ label:lab, select:()=>this.setState({reportCat:k}), style:'padding:6px 11px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;'+(S.reportCat===k?'background:var(--accent,#2f6df0);color:#fff':'color:#5b6781') }));
+    const cashSales=12840, upiSales=4980, khataSales=600, openingCash=2000;
+    return {
+      sidebarStyle:'flex:none;width:'+(compact?'72px':'248px')+';background:#0e1b39;display:flex;flex-direction:column;transition:width .2s;overflow:hidden',
+      showLabels:!compact,
+      navDashboard:nav('dashboard'), navBilling:nav('billing'), navInventory:nav('inventory'), navPurchase:nav('purchase'), navCustomers:nav('customers'), navReports:nav('reports'), navSettings:nav('settings'),
+      alertCount: low.length+out.length+nearBatches.length || null,
+      alertBadgeStyle:'background:#fb5b50;color:#fff;font-size:11px;font-weight:700;border-radius:9px;min-width:20px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;font-family:\'IBM Plex Mono\',monospace',
+      poBadge: S.draftPO.length||null,
+      poBadgeStyle:'background:var(--accent,#2f6df0);color:#fff;font-size:11px;font-weight:700;border-radius:9px;min-width:20px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;font-family:\'IBM Plex Mono\',monospace',
+      goDashboard:this.go('dashboard'), goBilling:this.go('billing'), goInventory:this.go('inventory'), goPurchase:this.go('purchase'), goCustomers:this.go('customers'), goReports:this.go('reports'), goSettings:this.go('settings'),
+      toggleSidebar:()=>this.setState({compact:!compact}),
+      setDesktop:()=>this.setState({compact:false}), setCompact:()=>this.setState({compact:true}),
+      modeDesktopStyle:'padding:6px 13px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;'+(!compact?'background:#fff;color:#101828;box-shadow:0 1px 3px rgba(16,24,40,.12)':'color:#8a94a6'),
+      modeCompactStyle:'padding:6px 13px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;'+(compact?'background:#fff;color:#101828;box-shadow:0 1px 3px rgba(16,24,40,.12)':'color:#8a94a6'),
+      viewTitle:titles[S.view][0], viewSubtitle:titles[S.view][1],
+      isDashboard:S.view==='dashboard', isBilling:S.view==='billing', isInventory:S.view==='inventory', isPurchase:S.view==='purchase', isCustomers:S.view==='customers', isReports:S.view==='reports', isSettings:S.view==='settings',
+      // dashboard
+      stockValue:this.money0(stockVal), skuCount:this.meds.filter(m=>this.stockOf(m)>0).length, lowCount:low.length, outCount:out.length, expiryCount:nearBatches.length, expiryValue:this.money0(expVal),
+      reorderList, expiryList,
+      // billing
+      billLayoutStyle:'display:flex;'+(compact?'flex-direction:column;':'')+'gap:16px;max-width:1320px;margin:0 auto;height:100%',
+      billAsideStyle:'flex:none;width:'+(compact?'100%':'340px')+';display:flex;flex-direction:column;gap:14px',
+      billSearch:S.billSearch, onBillSearch:(e)=>this.setState({billSearch:e.target.value}),
+      hasSearch:S.billSearch.trim().length>0, searchResults,
+      billEmpty:S.lines.length===0, billLines,
+      hasCustomer:!!cust, noCustomer:!cust,
+      custName:cust?cust.name:'', custPhone:cust?cust.phone:'', custInitials:cust?initials(cust.name):'',
+      custKhata: cust&&cust.khata>0?'  ·  ₹'+cust.khata+' due':'', custCanRebill:!!cust,
+      regulars, quickRebill:()=>cust&&this.rebill(cust.id), clearCustomer:()=>this.setState({customerId:null}),
+      tGross:this.money(t.gross), tDiscount:'−'+this.money(t.disc), discountPct:S.discountPct, onDiscount:(e)=>this.setState({discountPct:Math.max(0,Math.min(100,Number(e.target.value)||0))}),
+      tCgst:this.money(t.cgst), tSgst:this.money(t.sgst), tRound:(t.round>=0?'+':'−')+this.money(Math.abs(t.round)), tGrand:this.money0(t.grand),
+      payCash:()=>this.setState({pay:'cash'}), payUpi:()=>this.setState({pay:'upi'}), payCredit:()=>this.setState({pay:'credit'}),
+      payCashStyle:payStyle('cash'), payUpiStyle:payStyle('upi'), payCreditStyle:payStyle('credit'),
+      checkout:()=>this.checkout(),
+      checkoutStyle:'display:flex;align-items:center;justify-content:center;gap:10px;background:#1f8a4c;color:#fff;border-radius:10px;padding:15px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 4px 14px rgba(31,138,76,.3)',
+      // inventory
+      invQuery:S.invQuery, onInvQuery:(e)=>this.setState({invQuery:e.target.value}), invFilters, invRows,
+      openAddItem:()=>this.openItemForm(null),
+      // add/edit item form
+      itemFormOpen:S.itemFormOpen, itemFormTitle:S.editId?'Update item':'Add new item', itemFormSub:S.editId?'Edit master details · add a new received batch':'Medicine master + opening / purchased batch',
+      f:S.form,
+      onF:{ name:(e)=>this.setForm('name',e.target.value), composition:(e)=>this.setForm('composition',e.target.value), mfr:(e)=>this.setForm('mfr',e.target.value), hsn:(e)=>this.setForm('hsn',e.target.value), gst:(e)=>this.setForm('gst',e.target.value), rack:(e)=>this.setForm('rack',e.target.value), reorder:(e)=>this.setForm('reorder',e.target.value), reorderQty:(e)=>this.setForm('reorderQty',e.target.value), supplier:(e)=>this.setForm('supplier',e.target.value), batch:(e)=>this.setForm('batch',e.target.value), mfg:(e)=>this.setForm('mfg',e.target.value), exp:(e)=>this.setForm('exp',e.target.value), qty:(e)=>this.setForm('qty',e.target.value), cost:(e)=>this.setForm('cost',e.target.value), mrp:(e)=>this.setForm('mrp',e.target.value) },
+      schedOpts:['OTC','H','H1','X'], schedSel:(v)=>this.setForm('schedule',v),
+      schedPills:['OTC','H','H1','X'].map(v=>({ label:v, val:v, select:()=>this.setForm('schedule',v), style:'flex:1;text-align:center;padding:8px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid '+(S.form.schedule===v?'var(--accent,#2f6df0);background:#e8f0fe;color:var(--accent,#2f6df0)':'#e3e8f1;color:#5b6781') })),
+      supplierOpts:this.suppliers.map(s=>s.name),
+      saveItem:()=>this.saveItem(), closeItemForm:()=>this.setState({itemFormOpen:false,editId:null}),
+      // PO
+      poList, draftLines, draftValue, draftEmpty:S.draftPO.length===0, draftHasLines:S.draftPO.length>0, createPO:()=>this.createPO(),
+      // customers
+      custCards,
+      // reports
+      reportTabs, reportTitle:reportDefs[S.report].label, reportDesc:reportDefs[S.report].desc, reportCols, reportHead, reportRows,
+      exportXlsx:()=>this.toastMsg('Exporting '+reportDefs[S.report].label+' to Excel…'), exportPdf:()=>this.toastMsg('Exporting '+reportDefs[S.report].label+' to PDF…'),
+      // compact counter
+      billingDesktop: S.view==='billing' && !S.compact,
+      billingCompact: S.view==='billing' && S.compact,
+      searchRef:this.searchRef,
+      custPickerOpen:S.custPickerOpen,
+      toggleCustPicker:()=>this.setState(s=>({custPickerOpen:!s.custPickerOpen})),
+      pickWalkin:()=>this.setState({customerId:null,custPickerOpen:false}),
+      regularsCompact,
+      custAvatar: cust?initials(cust.name):'+',
+      custAvatarBg: cust?'#e8f0fe':'#eef2f8',
+      custAvatarColor: cust?'var(--accent,#2f6df0)':'#8a94a6',
+      custLineMain: cust?cust.name:'Walk-in customer',
+      custLineSub: cust?(cust.phone+(cust.khata>0?'  ·  ₹'+cust.khata+' due':'')):'Tap or press F4 to attach a regular',
+      payCashDark:payDark('cash'), payUpiDark:payDark('upi'), payCreditDark:payDark('credit'),
+      lineCount:S.lines.length, billHasLines:S.lines.length>0, clearBill:()=>this.askConfirm({title:'Clear the bill?',body:'Remove all items from the current bill? This cannot be undone.',confirmLabel:'Clear bill',danger:true,action:'doClearBill'}),
+      // suppliers
+      navSuppliers:nav('suppliers'), isSuppliers:S.view==='suppliers', goSuppliers:this.go('suppliers'), supplierCards,
+      winLabel,
+      // PO receive / returns
+      receiveOpen:!!recvPO, receivePOId:recvPO?recvPO.id:'', receiveSupplier:recvPO?recvPO.supplier:'', recvLines,
+      closeReceive:()=>this.setState({receivePO:null,recv:null}), postReceipt:()=>this.postReceipt(), poReturn:()=>this.poReturn(),
+      // adjustment
+      adjustOpen:!!adjMed, adjustMedName:adjMed?adjMed.name:'', adjustStock:adjMed?this.stockOf(adjMed):0, adjTypes, adjQty:S.adjQty, onAdjQty:(e)=>this.setState({adjQty:e.target.value}), adjReason:S.adjReason, onAdjReason:(e)=>this.setState({adjReason:e.target.value}), postAdjust:()=>this.tryAdjust(), closeAdjust:()=>this.setState({adjustMed:null}),
+      // rx + consent
+      rxOpen:S.rxOpen, rxSchedList, rxPrescriber:S.rx.prescriber, rxReg:S.rx.reg, rxPatient:S.rx.patient, rxConsent:S.rx.consent, rxImg:S.rx.img,
+      onRxPrescriber:(e)=>this.setRx('prescriber',e.target.value), onRxReg:(e)=>this.setRx('reg',e.target.value), onRxPatient:(e)=>this.setRx('patient',e.target.value),
+      toggleConsent:()=>this.setRx('consent',!S.rx.consent), toggleRxImg:()=>this.setRx('img',!S.rx.img),
+      consentBox:'width:20px;height:20px;border-radius:5px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;border:2px solid '+(S.rx.consent?'#067647;background:#067647':'#cdd6e6'),
+      rxImgBox:'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px;border-radius:9px;cursor:pointer;border:1.5px dashed '+(S.rx.img?'#067647;background:#eaf6ee;color:#067647':'#cdd6e6;color:#8a94a6'),
+      submitRx:()=>this.submitRx(), closeRx:()=>this.setState({rxOpen:false}),
+      // sales return
+      returnOpen:S.returnOpen, openReturn:()=>this.openReturn(), returnInv:S.returnInv, onReturnInv:(e)=>this.setState({returnInv:e.target.value}), postReturn:()=>this.askConfirm({title:'Process refund',body:'Refund this invoice and restore the returned units to their original batch? This is logged to the audit trail.',confirmLabel:'Process refund',danger:true,action:'postReturn'}), closeReturn:()=>this.setState({returnOpen:false}),
+      // day close
+      dayCloseOpen:S.dayCloseOpen, openDayClose:()=>this.setState({dayCloseOpen:true}), closeDayClose:()=>this.setState({dayCloseOpen:false}), dayCloseGo:()=>this.dayClose(),
+      dcCash:this.money0(cashSales), dcUpi:this.money0(upiSales), dcKhata:this.money0(khataSales), dcExpected:this.money0(openingCash+cashSales), dcOpening:this.money0(openingCash), cashCount:S.cashCount, onCashCount:(e)=>this.setState({cashCount:e.target.value}),
+      // reports filter + audit
+      reportCats, showReportCat:(S.report==='stock'||S.report==='lowstock'), auditRows:S.auditLog,
+      // form validation
+      feName:S.formErrors.name, feGst:S.formErrors.gst, feExp:S.formErrors.exp, feMrp:S.formErrors.mrp, feBatch:S.formErrors.batch,
+      nameBorder:'1px solid '+(S.formErrors.name?'#e0644f':'#d7deeb'),
+      expBorder:'1px solid '+(S.formErrors.exp?'#e0644f':'#d7deeb'),
+      recvErr:S.recvErr,
+      // invoice
+      invoiceOpen:!!S.invoice, inv:S.invoice||{lines:[]}, closeInvoice:()=>this.closeInvoice(), printInvoice:()=>this.printInvoice(),
+      invPay: S.invoice?({cash:'Cash',upi:'UPI',credit:'Khata (credit)'}[S.invoice.pay]||S.invoice.pay):'',
+      invGross: S.invoice?this.money(S.invoice.gross):'', invDisc: S.invoice?this.money(S.invoice.disc):'', invCgst: S.invoice?this.money(S.invoice.cgst):'', invSgst: S.invoice?this.money(S.invoice.sgst):'', invRound: S.invoice?((S.invoice.round>=0?'+':'−')+this.money(Math.abs(S.invoice.round))):'', invGrand: S.invoice?this.money0(S.invoice.grand):'',
+      invLines: (S.invoice?S.invoice.lines:[]).map(l=>({ name:l.name, batch:l.batch, exp:l.exp, hsn:l.hsn, qty:l.qty, gst:l.gst+'%', rate:this.money(l.rate), amount:this.money(l.amount) })),
+      // confirm dialog
+      confirmOpen:!!S.confirm, confirmTitle:S.confirm?S.confirm.title:'', confirmBody:S.confirm?S.confirm.body:'', confirmLabel:S.confirm?S.confirm.confirmLabel:'Confirm',
+      confirmBtnStyle:'padding:10px 18px;border-radius:8px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;background:'+((S.confirm&&S.confirm.danger)?'#b42318':'var(--accent,#2f6df0)'),
+      runConfirm:()=>this.runConfirm(), closeConfirm:()=>this.closeConfirm(),
+      // offline
+      offline:S.offline, toggleOffline:()=>this.setState({offline:!S.offline}),
+      connStyle:'display:flex;align-items:center;gap:7px;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;'+(S.offline?'background:#fef0d6;color:#b54708;border:1px solid #f4d39a':'background:#eaf6ee;color:#067647;border:1px solid #c3e9d1'),
+      connDot:'width:7px;height:7px;border-radius:50%;'+(S.offline?'background:#e8941a':'background:#12a150;box-shadow:0 0 0 3px rgba(18,161,80,.18)'),
+      connLabel:S.offline?'Offline · queued':'Online · synced',
+      // toast
+      toast:S.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>
