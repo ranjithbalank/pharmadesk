@@ -15,9 +15,11 @@ from .models import Invoice, InvoiceLine
 
 
 def next_invoice_number():
-    """Sequential, human-readable invoice number: INV-YYYYMMDD-NNNN."""
+    """Sequential, human-readable invoice number: <PREFIX>-YYYYMMDD-NNNN.
+    The prefix is configurable in Shop settings (default 'INV')."""
+    from apps.core.models import ShopSetting
     today = timezone.localdate()
-    prefix = f'INV-{today:%Y%m%d}-'
+    prefix = f'{ShopSetting.load().invoice_prefix}-{today:%Y%m%d}-'
     last = (
         Invoice.objects.filter(number__startswith=prefix)
         .order_by('-number')

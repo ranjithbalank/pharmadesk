@@ -90,3 +90,60 @@ class FefoTests(TestCase):
         make_batch(med, 3, batch_number='ONLY')
         with self.assertRaises(ValidationError):
             allocate_fefo(med, 10)
+
+
+class ExpiryValidationTests(TestCase):
+    def test_expired_batch_rejected_by_api(self):
+        med = make_medicine()
+        resp = self.client.post('/api/batches/', data={
+            'medicine': med.id, 'batch_number': 'OLD',
+            'expiry_date': '2020-01-01', 'mrp': 5,
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('expiry_date', resp.json())
+
+    def test_expiry_before_mfg_rejected(self):
+        med = make_medicine()
+        resp = self.client.post('/api/batches/', data={
+            'medicine': med.id, 'batch_number': 'BAD',
+            'mfg_date': '2027-01-01', 'expiry_date': '2026-01-01', 'mrp': 5,
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_future_batch_accepted(self):
+        med = make_medicine()
+        resp = self.client.post('/api/batches/', data={
+            'medicine': med.id, 'batch_number': 'GOOD',
+            'expiry_date': (timezone.localdate() + timedelta(days=365)).isoformat(),
+            'quantity': 50, 'mrp': 10,
+        }, content_type='application/json')
+        self.assertEqual(resp.status_code, 201)
+
+
+class AdjustmentReverseTests(TestCase):
+    def test_reverse_adjustment_restores_stock(self):
+        med = make_medicine()
+        batch = make_batch(med, 20)
+        StockMovement.objects.create(batch=batch, reason=StockMovement.Reason.DAMAGE, quantity=-5)
+        batch.refresh_from_db()
+        self.assertEqual(batch.quantity, 15)
+        mv = StockMovement.objects.filter(reason='damage').first()
+        resp = self.client.post(f'/api/stock-movements/{mv.id}/reverse/')
+        self.assertEqual(resp.status_code, 201)
+        batch.refresh_from_db()
+        self.assertEqual(batch.quantity, 20)
+
+    def test_cannot_reverse_a_sale(self):
+        med = make_medicine()
+        batch = make_batch(med, 20)
+        sale = StockMovement.objects.create(batch=batch, reason=StockMovement.Reason.SALE, quantity=-2)
+        resp = self.client.post(f'/api/stock-movements/{sale.id}/reverse/')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_cannot_reverse_twice(self):
+        med = make_medicine()
+        batch = make_batch(med, 20)
+        mv = StockMovement.objects.create(batch=batch, reason=StockMovement.Reason.COUNT, quantity=-3)
+        self.client.post(f'/api/stock-movements/{mv.id}/reverse/')
+        resp = self.client.post(f'/api/stock-movements/{mv.id}/reverse/')
+        self.assertEqual(resp.status_code, 400)

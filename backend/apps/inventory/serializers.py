@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .models import Batch, Medicine, StockMovement
@@ -16,6 +17,21 @@ class BatchSerializer(serializers.ModelSerializer):
             'is_expired', 'days_to_expiry', 'received_at',
         ]
         read_only_fields = ['quantity', 'received_at']
+
+    def validate(self, attrs):
+        """Run the model's expiry validation (item 12) on add/edit so expired
+        stock can never be entered through the API."""
+        instance = Batch(**{**self._instance_data(), **attrs})
+        try:
+            instance.clean()
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.message_dict)
+        return attrs
+
+    def _instance_data(self):
+        if not self.instance:
+            return {}
+        return {'mfg_date': self.instance.mfg_date, 'expiry_date': self.instance.expiry_date}
 
 
 class MedicineSerializer(serializers.ModelSerializer):
@@ -63,5 +79,5 @@ class StockMovementSerializer(serializers.ModelSerializer):
         model = StockMovement
         fields = [
             'id', 'batch', 'batch_label', 'reason', 'reason_display',
-            'quantity', 'note', 'actor', 'created_at',
+            'quantity', 'note', 'actor', 'reversed', 'created_at',
         ]

@@ -100,21 +100,57 @@ export interface Customer {
   is_regular: boolean
   allow_credit: boolean
   credit_balance: string
+  has_drug_license: boolean
+  drug_license_no: string
   consent_given: boolean
   invoice_count?: number
 }
 
+export interface PaymentTerm {
+  id: number
+  name: string
+  days: number
+  is_active: boolean
+}
+
+export interface LeadTime {
+  id: number
+  label: string
+  days: number
+  is_active: boolean
+}
+
 export interface Supplier {
   id: number
+  code: string
   name: string
   gstin: string
   contact_person: string
   phone: string
   email: string
   address: string
+  has_drug_license: boolean
+  drug_license_no: string
+  payment_term: number | null
+  payment_term_name?: string
+  lead_time: number | null
+  lead_time_label?: string
   payment_terms: string
   lead_time_days: number
   is_active: boolean
+}
+
+export interface StockMovement {
+  id: number
+  batch: number
+  batch_label: string
+  reason: string
+  reason_display: string
+  quantity: number
+  note: string
+  actor: string
+  reversed: boolean
+  created_at: string
 }
 
 export interface NotificationItem {

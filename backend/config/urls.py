@@ -32,8 +32,14 @@ urlpatterns = [
     path('api/', include('config.api')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded media (e.g. shop logo) on the local app in both dev and the
+# packaged build — it's a single-PC localhost server, so this is safe.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if not settings.DEBUG:
+    from django.views.static import serve as serve_media
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve_media, {'document_root': settings.MEDIA_ROOT}),
+    ]
 
 # Catch-all for the SPA — must stay last. Excludes api/admin/static/media.
 urlpatterns += [

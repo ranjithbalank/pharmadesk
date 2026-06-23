@@ -71,9 +71,15 @@ export default function Customers() {
 
 function AddCustomer({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({
-    name: '', phone: '', address: '', is_regular: false, allow_credit: false, consent_given: false,
+    name: '', phone: '', address: '', is_regular: false, allow_credit: false,
+    consent_given: false, has_drug_license: false, drug_license_no: '',
   })
-  const create = useMutation({ mutationFn: () => api.post('/customers/', form), onSuccess: onClose })
+  const [err, setErr] = useState('')
+  const create = useMutation({
+    mutationFn: () => api.post('/customers/', form),
+    onSuccess: onClose,
+    onError: (e: any) => setErr(e?.response?.data?.drug_license_no?.[0] ?? 'Could not save customer.'),
+  })
 
   return (
     <Modal title="Add customer" onClose={onClose}>
@@ -91,13 +97,20 @@ function AddCustomer({ onClose }: { onClose: () => void }) {
           <textarea className="input" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
         </div>
         <div className="flex flex-col gap-2 pt-1">
-          {([['is_regular', 'Regular customer'], ['allow_credit', 'Allow credit / khata'], ['consent_given', 'Consent given to store personal data (DPDP)']] as const).map(([k, label]) => (
+          {([['is_regular', 'Regular customer'], ['allow_credit', 'Allow credit / khata'], ['consent_given', 'Consent given to store personal data (DPDP)'], ['has_drug_license', 'Holds a medical supply (drug) licence']] as const).map(([k, label]) => (
             <label key={k} className="flex items-center gap-2 text-[13px]">
               <input type="checkbox" checked={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.checked })} />
               {label}
             </label>
           ))}
         </div>
+        {form.has_drug_license && (
+          <div>
+            <label className="label">Drug licence no. *</label>
+            <input className="input" value={form.drug_license_no} onChange={(e) => setForm({ ...form, drug_license_no: e.target.value })} />
+          </div>
+        )}
+        {err && <p className="text-[12px] text-danger">{err}</p>}
       </div>
       <div className="flex justify-end gap-2 mt-5">
         <button className="btn-ghost" onClick={onClose}>Cancel</button>

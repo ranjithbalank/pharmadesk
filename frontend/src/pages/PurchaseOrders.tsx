@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, Plus, Send, PackageCheck } from 'lucide-react'
+import { Sparkles, Plus, Send, PackageCheck, FileText } from 'lucide-react'
 import { api, inr } from '../lib/api'
 import { PageHeader, Empty, Modal } from '../components/ui'
 
@@ -8,6 +8,7 @@ interface POLine { id?: number; medicine: number; medicine_name?: string; quanti
 interface PO {
   id: number; number: string; supplier: number; supplier_name: string
   status: string; status_display: string; total_value: string; lines: POLine[]; created_at: string
+  bill_to?: string; ship_to?: string
 }
 interface Suggestion { supplier: number | null; lines: POLine[] }
 
@@ -173,6 +174,9 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
           {current.status_display}
         </span>
         <div className="flex gap-2">
+          <a className="btn-ghost !py-1.5" href={`/api/purchase-orders/${po.id}/pdf/`} target="_blank" rel="noreferrer">
+            <FileText size={14} /> PDF
+          </a>
           {current.status === 'draft' && (
             <button className="btn-ghost !py-1.5" disabled={place.isPending} onClick={() => place.mutate()}>
               <Send size={14} /> Place order
@@ -185,6 +189,13 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
           )}
         </div>
       </div>
+
+      {(current.bill_to || current.ship_to) && (
+        <div className="grid grid-cols-2 gap-3 mb-3 text-[12px]">
+          <div className="card p-2.5"><div className="text-muted font-semibold mb-0.5">Bill to</div><div className="whitespace-pre-line">{current.bill_to || '—'}</div></div>
+          <div className="card p-2.5"><div className="text-muted font-semibold mb-0.5">Ship to</div><div className="whitespace-pre-line">{current.ship_to || '—'}</div></div>
+        </div>
+      )}
 
       {!receiving ? (
         <table className="w-full text-[13px]">

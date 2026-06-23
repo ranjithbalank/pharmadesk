@@ -12,8 +12,23 @@ class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     filterset_fields = ['is_regular', 'allow_credit']
-    search_fields = ['name', 'phone']
+    search_fields = ['name', 'phone', 'id']
     ordering_fields = ['name', 'created_at']
+
+    @action(detail=False)
+    def lookup(self, request):
+        """Fetch a customer at the billing counter by exact customer ID or
+        phone number (item 3). e.g. /customers/lookup/?q=9445566778
+        """
+        q = (request.query_params.get('q') or '').strip()
+        if not q:
+            return Response({'detail': 'Provide ?q=<customer id or phone>.'}, status=400)
+        customer = Customer.objects.filter(phone=q).first()
+        if not customer and q.isdigit():
+            customer = Customer.objects.filter(pk=int(q)).first()
+        if not customer:
+            return Response({'detail': f'No customer found for "{q}".'}, status=404)
+        return Response(CustomerSerializer(customer).data)
 
     @action(detail=True)
     def usual_items(self, request, pk=None):

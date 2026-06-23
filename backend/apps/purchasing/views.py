@@ -1,42 +1,60 @@
 from django.db import transaction
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.models import ShopSetting
 from apps.inventory.models import Batch, Medicine, StockMovement
 
-from .models import PurchaseOrder, PurchaseOrderLine, Supplier
-from .serializers import PurchaseOrderSerializer, SupplierSerializer
+from .models import LeadTime, PaymentTerm, PurchaseOrder, PurchaseOrderLine, Supplier
+from .pdf import purchase_order_pdf
+from .serializers import (
+    LeadTimeSerializer,
+    PaymentTermSerializer,
+    PurchaseOrderSerializer,
+    SupplierSerializer,
+)
+
+
+class PaymentTermViewSet(viewsets.ModelViewSet):
+    queryset = PaymentTerm.objects.all()
+    serializer_class = PaymentTermSerializer
+    filterset_fields = ['is_active']
+
+
+class LeadTimeViewSet(viewsets.ModelViewSet):
+    queryset = LeadTime.objects.all()
+    serializer_class = LeadTimeSerializer
+    filterset_fields = ['is_active']
 
 
 class SupplierViewSet(viewsets.ModelViewSet):
-    queryset = Supplier.objects.all()
+    queryset = Supplier.objects.select_related('payment_term', 'lead_time').all()
     serializer_class = SupplierSerializer
     filterset_fields = ['is_active']
-    search_fields = ['name', 'gstin', 'contact_person', 'phone']
-    ordering_fields = ['name', 'created_at']
-
-
-def _next_po_number():
-    today = timezone.localdate()
-    prefix = f'PO-{today:%Y%m%d}-'
-    last = (
-        PurchaseOrder.objects.filter(number__startswith=prefix)
-        .order_by('-number').values_list('number', flat=True).first()
-    )
-    seq = int(last.split('-')[-1]) + 1 if last else 1
-    return f'{prefix}{seq:04d}'
+    search_fields = ['code', 'name', 'gstin', 'contact_person', 'phone']
+    ordering_fields = ['name', 'code', 'created_at']
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
-    queryset = PurchaseOrder.objects.prefetch_related('lines__medicine').all()
+    queryset = PurchaseOrder.objects.prefetch_related('lines__medicine').select_related('supplier').all()
     serializer_class = PurchaseOrderSerializer
     filterset_fields = ['status', 'supplier']
     ordering_fields = ['created_at']
 
     def perform_create(self, serializer):
-        serializer.save(number=_next_po_number())
+        # Document number from the configurable prefix + running counter.
+        serializer.save(number=ShopSetting.load().next_po_number())
+
+    @action(detail=True, methods=['get'])
+    def pdf(self, request, pk=None):
+        """PO document PDF with shop logo, address, GST and per-line HSN."""
+        po = self.get_object()
+        resp = HttpResponse(purchase_order_pdf(po), content_type='application/pdf')
+        resp['Content-Disposition'] = f'inline; filename="{po.number}.pdf"'
+        return resp
 
     @action(detail=False, methods=['post'])
     def suggest(self, request):
