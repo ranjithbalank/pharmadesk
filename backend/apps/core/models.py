@@ -12,6 +12,11 @@ class ShopSetting(models.Model):
     address = models.TextField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
+    logo = models.ImageField(upload_to='branding/', null=True, blank=True)
+
+    # Whether the shop holds a medical-supply (drug) licence — when yes, the
+    # licence number is printed on documents (PO, invoice).
+    has_drug_license = models.BooleanField('Has medical supply licence', default=True)
 
     # Operational defaults
     near_expiry_days = models.PositiveIntegerField(
@@ -21,10 +26,23 @@ class ShopSetting(models.Model):
     default_reorder_qty = models.PositiveIntegerField(default=50)
     default_gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=12)
 
+    # Purchase-order document numbering — configurable prefix + running number.
+    po_prefix = models.CharField('PO number prefix', max_length=12, default='PO')
+    po_next_number = models.PositiveIntegerField(default=1)
+    # Invoice numbering prefix (sequence stays date-based per day).
+    invoice_prefix = models.CharField('Invoice number prefix', max_length=12, default='INV')
+
     # SEC-2: a simple admin password protects sensitive settings.
     admin_password = models.CharField(max_length=128, blank=True)
 
     updated_at = models.DateTimeField(auto_now=True)
+
+    def next_po_number(self):
+        """Return the next PO document number and advance the counter."""
+        number = f'{self.po_prefix}-{self.po_next_number:05d}'
+        self.po_next_number += 1
+        self.save(update_fields=['po_next_number'])
+        return number
 
     class Meta:
         verbose_name = 'Shop setting'

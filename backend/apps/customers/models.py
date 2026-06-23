@@ -15,6 +15,11 @@ class Customer(models.Model):
     allow_credit = models.BooleanField(default=False)
     credit_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
+    # Institutional buyers (clinics/other pharmacies) may hold a medical-supply
+    # licence — captured for scheduled-drug sale records.
+    has_drug_license = models.BooleanField('Has medical supply licence', default=False)
+    drug_license_no = models.CharField('Drug licence no.', max_length=60, blank=True)
+
     # FR-26: consent notice for storing personal data (DPDP).
     consent_given = models.BooleanField(default=False)
 

@@ -115,6 +115,19 @@ class Batch(models.Model):
     def __str__(self):
         return f'{self.medicine.name} · {self.batch_number} · exp {self.expiry_date}'
 
+    def clean(self):
+        """Validate expiry on stock addition (item 12): a batch must not be
+        already expired, and expiry must come after the manufacturing date.
+        """
+        from django.core.exceptions import ValidationError
+        errors = {}
+        if self.expiry_date and self.expiry_date < timezone.localdate():
+            errors['expiry_date'] = 'Expiry date is in the past — cannot add expired stock.'
+        if self.mfg_date and self.expiry_date and self.expiry_date <= self.mfg_date:
+            errors['expiry_date'] = 'Expiry date must be after the manufacturing date.'
+        if errors:
+            raise ValidationError(errors)
+
     @property
     def is_expired(self):
         return self.expiry_date < timezone.localdate()
@@ -144,6 +157,8 @@ class StockMovement(models.Model):
     quantity = models.IntegerField()
     note = models.CharField(max_length=200, blank=True)
     actor = models.CharField(max_length=80, default='counter')
+    # Set when an adjustment has been reversed, so it can't be reversed twice.
+    reversed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

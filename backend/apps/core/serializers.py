@@ -7,9 +7,11 @@ class ShopSettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShopSetting
         fields = [
-            'shop_name', 'gstin', 'drug_licence_no', 'address', 'phone', 'email',
+            'shop_name', 'gstin', 'drug_licence_no', 'has_drug_license', 'logo',
+            'address', 'phone', 'email',
             'near_expiry_days', 'default_reorder_level', 'default_reorder_qty',
-            'default_gst_rate', 'updated_at',
+            'default_gst_rate', 'po_prefix', 'po_next_number', 'invoice_prefix',
+            'updated_at',
         ]
         # admin_password is write-only / managed separately; never expose it.
 

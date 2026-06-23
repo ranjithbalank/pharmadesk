@@ -81,3 +81,30 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StockMovement.objects.select_related('batch', 'batch__medicine').all()
     serializer_class = StockMovementSerializer
     filterset_fields = ['reason', 'batch']
+
+    # Adjustment reasons that may be reversed (item 11).
+    REVERSIBLE = {
+        StockMovement.Reason.DAMAGE, StockMovement.Reason.EXPIRY,
+        StockMovement.Reason.COUNT,
+    }
+
+    @action(detail=True, methods=['post'])
+    def reverse(self, request, pk=None):
+        """Reverse a stock adjustment by posting an equal-and-opposite movement
+        (the ledger stays append-only — nothing is deleted)."""
+        movement = self.get_object()
+        if movement.reason not in self.REVERSIBLE:
+            return Response(
+                {'detail': 'Only stock adjustments (damage, expiry, count) can be reversed.'},
+                status=status.HTTP_400_BAD_REQUEST)
+        if movement.note.startswith('Reversal of') or movement.reversed:
+            return Response({'detail': 'This adjustment has already been reversed.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        reversal = StockMovement.objects.create(
+            batch=movement.batch, reason=movement.reason,
+            quantity=-movement.quantity, note=f'Reversal of movement #{movement.id}',
+        )
+        movement.reversed = True
+        movement.save(update_fields=['reversed'])
+        return Response(StockMovementSerializer(reversal).data,
+                        status=status.HTTP_201_CREATED)

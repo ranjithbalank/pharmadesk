@@ -12,7 +12,12 @@ from apps.core.views import (
 )
 from apps.customers.views import CustomerViewSet, PrescriptionViewSet
 from apps.inventory.views import BatchViewSet, MedicineViewSet, StockMovementViewSet
-from apps.purchasing.views import PurchaseOrderViewSet, SupplierViewSet
+from apps.purchasing.views import (
+    LeadTimeViewSet,
+    PaymentTermViewSet,
+    PurchaseOrderViewSet,
+    SupplierViewSet,
+)
 from apps.reports.views import report_view
 
 router = DefaultRouter()
@@ -20,6 +25,8 @@ router.register('medicines', MedicineViewSet)
 router.register('batches', BatchViewSet)
 router.register('stock-movements', StockMovementViewSet)
 router.register('suppliers', SupplierViewSet)
+router.register('payment-terms', PaymentTermViewSet)
+router.register('lead-times', LeadTimeViewSet)
 router.register('purchase-orders', PurchaseOrderViewSet)
 router.register('customers', CustomerViewSet)
 router.register('prescriptions', PrescriptionViewSet)

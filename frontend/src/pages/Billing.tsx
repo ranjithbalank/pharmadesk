@@ -22,6 +22,8 @@ export default function Billing() {
   const [rx, setRx] = useState<RxMap>({})
   const [saved, setSaved] = useState<Invoice | null>(null)
   const [showDayClose, setShowDayClose] = useState(false)
+  const [custQuery, setCustQuery] = useState('')
+  const [custErr, setCustErr] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const { data: meds } = useQuery({
@@ -32,9 +34,20 @@ export default function Billing() {
       })).data.results,
     enabled: search.length > 0,
   })
-  const { data: customers } = useQuery({
+  const { data: customers, refetch: refetchCustomers } = useQuery({
     queryKey: ['customers', 'all'],
     queryFn: async () => (await api.get<Paginated<Customer>>('/customers/')).data.results,
+  })
+
+  // Item 3: fetch a customer at the counter by exact customer ID or phone.
+  const lookupCustomer = useMutation({
+    mutationFn: async () => (await api.get<Customer>('/customers/lookup/', { params: { q: custQuery.trim() } })).data,
+    onSuccess: async (c) => {
+      await refetchCustomers()
+      setCustomerId(c.id)
+      setCustQuery('')
+    },
+    onError: () => setCustErr(`No customer found for "${custQuery.trim()}".`),
   })
 
   const scheduledLines = cart.filter((c) => c.medicine.schedule !== 'OTC')
@@ -267,6 +280,17 @@ export default function Billing() {
           <div className="card p-4 space-y-3">
             <div>
               <label className="label">Customer</label>
+              <div className="flex gap-1.5 mb-1.5">
+                <input
+                  value={custQuery}
+                  onChange={(e) => { setCustQuery(e.target.value); setCustErr('') }}
+                  onKeyDown={(e) => e.key === 'Enter' && lookupCustomer.mutate()}
+                  placeholder="Fetch by customer ID or phone…"
+                  className="input !py-2 text-[13px]" />
+                <button className="btn-ghost !py-2" disabled={!custQuery || lookupCustomer.isPending}
+                  onClick={() => lookupCustomer.mutate()}>Fetch</button>
+              </div>
+              {custErr && <p className="text-[11.5px] text-danger mb-1">{custErr}</p>}
               <select className="input" value={customerId}
                 onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : '')}>
                 <option value="">Walk-in customer</option>

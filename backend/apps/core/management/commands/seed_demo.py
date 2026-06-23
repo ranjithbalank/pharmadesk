@@ -42,8 +42,14 @@ class Command(BaseCommand):
     help = 'Seed demo data for the PharmaDesk pilot.'
 
     def handle(self, *args, **options):
+        from apps.customers.models import Prescription
+        from apps.purchasing.models import (
+            LeadTime, PaymentTerm, PurchaseOrder, PurchaseOrderLine,
+        )
         self.stdout.write('Clearing existing demo data...')
-        for model in (Invoice, StockMovement, Batch, Medicine, Supplier, Customer):
+        for model in (Prescription, Invoice, StockMovement, PurchaseOrderLine,
+                      PurchaseOrder, Batch, Medicine, Supplier, Customer,
+                      PaymentTerm, LeadTime):
             model.objects.all().delete()
 
         shop = ShopSetting.load()
@@ -52,15 +58,23 @@ class Command(BaseCommand):
         shop.drug_licence_no = 'TN/ERD/20B/2021/0456'
         shop.address = 'Perundurai, Erode District, Tamil Nadu'
         shop.phone = '04294 222333'
+        shop.has_drug_license = True
         shop.save()
 
-        suppliers = [
-            Supplier.objects.create(
-                name=n, gstin=g, contact_person=c, phone=p, lead_time_days=lt,
-                payment_terms='30 days credit',
-            )
-            for n, g, c, p, lt in SUPPLIERS
-        ]
+        # Masters: payment terms & lead times.
+        terms = [PaymentTerm.objects.create(name=n, days=d) for n, d in
+                 [('Cash on delivery', 0), ('15 days credit', 15), ('30 days credit', 30)]]
+        leads = [LeadTime.objects.create(label=l, days=d) for l, d in
+                 [('Next day', 1), ('2-3 days', 3), ('Weekly', 7)]]
+
+        suppliers = []
+        for i, (n, g, c, p, lt) in enumerate(SUPPLIERS):
+            suppliers.append(Supplier.objects.create(
+                code=f'SUP{i + 1:03d}', name=n, gstin=g, contact_person=c, phone=p,
+                lead_time_days=lt, payment_terms='30 days credit',
+                payment_term=terms[2], lead_time=leads[min(i, 2)],
+                has_drug_license=True, drug_license_no=f'TN/ERD/21B/{1000 + i}',
+            ))
 
         today = timezone.localdate()
         meds = []
@@ -104,8 +118,9 @@ class Command(BaseCommand):
             ]
         ]
 
-        # A few sales across the last week to populate reports.
-        sellable = [m for m in meds if m.total_stock > 5]
+        # A few sales across the last week to populate reports. Use OTC items
+        # only so the demo doesn't trip the scheduled-drug prescription guard.
+        sellable = [m for m in meds if m.total_stock > 5 and m.schedule == 'OTC']
         for d in range(7):
             for _ in range(random.randint(1, 4)):
                 picks = random.sample(sellable, k=min(len(sellable), random.randint(1, 3)))
