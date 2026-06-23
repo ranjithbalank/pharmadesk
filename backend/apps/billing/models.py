@@ -1,6 +1,13 @@
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import models
+
+_PAISE = Decimal('0.01')
+
+
+def _money(value):
+    """Round a Decimal to two places (paise) the way money should round."""
+    return Decimal(value).quantize(_PAISE, rounding=ROUND_HALF_UP)
 
 
 class Invoice(models.Model):
@@ -86,24 +93,29 @@ class InvoiceLine(models.Model):
         return self.rate * self.quantity
 
     @property
+    def line_total(self):
+        """What the customer pays for this line (MRP is GST-inclusive)."""
+        return _money(self.gross - self.discount)
+
+    @property
     def taxable_value(self):
-        """Net of line discount, GST extracted as exclusive of this value."""
-        net = self.gross - self.discount
+        """Line value net of GST, rounded to paise. GST is then derived as the
+        remainder so taxable + CGST + SGST always equal line_total exactly —
+        no paisa drift on the printed tax invoice."""
+        if not self.gst_rate:
+            return self.line_total
         divisor = Decimal('1') + (self.gst_rate / Decimal('100'))
-        return (net / divisor) if divisor else net
+        return _money(self.line_total / divisor)
 
     @property
     def gst_amount(self):
-        return (self.gross - self.discount) - self.taxable_value
+        return self.line_total - self.taxable_value
 
     @property
     def cgst_amount(self):
-        return self.gst_amount / Decimal('2')
+        return _money(self.gst_amount / Decimal('2'))
 
     @property
     def sgst_amount(self):
-        return self.gst_amount / Decimal('2')
-
-    @property
-    def line_total(self):
-        return self.gross - self.discount
+        # The remainder, so CGST + SGST == GST exactly even on odd paise.
+        return self.gst_amount - self.cgst_amount

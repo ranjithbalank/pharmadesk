@@ -95,10 +95,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DB file is overridable (PHARMADESK_DB_PATH) so the pharmacy can keep its
+# live data on a chosen drive/folder separate from the application code.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.environ.get('PHARMADESK_DB_PATH', BASE_DIR / 'db.sqlite3'),
     }
 }
 

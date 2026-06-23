@@ -1,0 +1,4 @@
+name,generic_name,manufacturer,hsn_code,gst_rate,schedule,pack_unit,rack_location,barcode,reorder_level,reorder_qty,batch_number,expiry_date,mfg_date,quantity,purchase_cost,mrp
+Paracetamol 500mg,Paracetamol,Cipla,3004,12,OTC,Strip of 10,R1-2,8901234567890,20,100,PCM2401,2027-06-30,2025-06-01,150,8.50,12.00
+Amoxicillin 250mg,Amoxicillin,Sun Pharma,3004,12,H,Strip of 10,R2-1,,15,50,AMX2312,2026-12-31,2024-12-01,40,18.00,25.00
+Azithromycin 500mg,Azithromycin,Alkem,3004,12,H1,Strip of 5,R2-3,,10,30,AZI2403,2027-03-31,2025-03-01,25,42.00,60.00
