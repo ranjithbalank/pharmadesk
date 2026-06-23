@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react'
 
 // The React dev server proxies /api and /media to the local Django server so
 // the offline-first app talks to one origin in dev as it will once packaged.
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
+  // Production build is served by Django/WhiteNoise under /static/; the dev
+  // server stays at root so http://localhost:5173/ works as before.
+  base: command === 'build' ? '/static/' : '/',
   server: {
     port: 5173,
     proxy: {
@@ -12,4 +15,4 @@ export default defineConfig({
       '/media': 'http://127.0.0.1:8000',
     },
   },
-})
+}))

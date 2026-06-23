@@ -10,22 +10,30 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# The Vite build output that Django serves once packaged (desktop.py).
+FRONTEND_DIST = BASE_DIR.parent / 'frontend' / 'dist'
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%+4gpz@qak=v)!l)ip=9n$%9+(^3&0px^8ek=pmyw37--6$1%n'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-%+4gpz@qak=v)!l)ip=9n$%9+(^3&0px^8ek=pmyw37--6$1%n',
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG on for dev (Vite serves the UI); off when packaged (desktop.py sets it).
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = []
+# Local-only app — the server only ever listens on this machine.
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -53,6 +61,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise serves the built React static assets under the local server.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -128,10 +138,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-MEDIA_URL = 'media/'
+# Pick up the Vite build (built with base '/static/') for collectstatic.
+STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
+
+# WhiteNoise: compress assets but no manifest — Vite already hashes filenames
+# and the SPA's index.html references them directly.
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+}
+
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type

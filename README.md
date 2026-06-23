@@ -47,6 +47,45 @@ npm run dev
 
 Open the printed `http://localhost:5173/` URL.
 
+## Running it as the counter app (packaged, single PC)
+
+This is how the pharmacy actually runs it — one local server, one window, no
+internet. Django serves the built React UI; Waitress runs it; pywebview gives
+the desktop window (BRD §9.4).
+
+```bat
+build-desktop.bat      :: builds the UI + collects static + migrates (run after code changes)
+start-desktop.bat      :: launches the desktop app (Waitress + window)
+start-desktop.bat --browser   :: serve only; open in the default browser instead
+```
+
+`desktop.py` migrates the DB, collects static, takes a startup backup, serves
+on `127.0.0.1:8000`, and opens the window. Everything is localhost.
+
+### Auto-start at logon + daily backup
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install-autostart.ps1
+```
+
+Registers two Scheduled Tasks: launch at logon, and a daily 21:00 DB backup.
+
+## Backup & restore (SEC-3 — the one security item kept firmly in MVP)
+
+```bash
+python manage.py backup_db        # timestamped copy in backend/backups/ (+ off-machine if set)
+python manage.py restore_db       # show what the latest backup would restore
+python manage.py restore_db --yes # restore latest (parks current DB first, so it's reversible)
+python manage.py restore_db path/to/file.sqlite3 --yes
+```
+
+Set an **off-machine** copy (external drive / cloud-synced folder) so a PC
+failure can't lose data (BRD R-3):
+
+```bat
+setx PHARMADESK_BACKUP_DIR "D:\Backups\PharmaDesk"
+```
+
 ## Key API endpoints
 
 - `GET /api/dashboard/` — counters for the dashboard cards
@@ -63,3 +102,6 @@ Open the printed `http://localhost:5173/` URL.
 - Single shared login per BRD §7 (auth left light for v1).
 - Cloud sync is deferred (BRD §12.3) — the same Django backend redeploys to
   PostgreSQL later with config-only changes.
+- **WhiteNoise** (MIT, permissive) was added beyond the BRD §15 SBOM to serve
+  the React build from the local Django server. Regenerate the SBOM on release
+  per BRD §15.5; the licence stance (closed-source, commercial) is unchanged.
