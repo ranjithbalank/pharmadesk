@@ -44,6 +44,16 @@ class _CartItemSerializer(serializers.Serializer):
     )
 
 
+class _RxSerializer(serializers.Serializer):
+    """Prescription captured at the counter for a scheduled drug (FR-23)."""
+    medicine = serializers.PrimaryKeyRelatedField(queryset=Medicine.objects.all())
+    patient_name = serializers.CharField()
+    prescriber_name = serializers.CharField()
+    prescriber_reg_no = serializers.CharField(required=False, allow_blank=True, default='')
+    quantity = serializers.IntegerField(min_value=1, required=False, default=1)
+    rx_date = serializers.DateField(required=False, allow_null=True)
+
+
 class InvoiceCreateSerializer(serializers.Serializer):
     """Input for the billing screen: a cart of items plus payment details.
     Delegates to the FEFO billing service and returns the saved invoice.
@@ -60,6 +70,7 @@ class InvoiceCreateSerializer(serializers.Serializer):
     )
     note = serializers.CharField(required=False, allow_blank=True, default='')
     items = _CartItemSerializer(many=True)
+    prescriptions = _RxSerializer(many=True, required=False, default=list)
 
     def validate_items(self, items):
         if not items:
@@ -73,6 +84,7 @@ class InvoiceCreateSerializer(serializers.Serializer):
             bill_discount=validated_data.get('discount', 0),
             items=validated_data['items'],
             note=validated_data.get('note', ''),
+            prescriptions=validated_data.get('prescriptions', []),
         )
 
     def to_representation(self, instance):

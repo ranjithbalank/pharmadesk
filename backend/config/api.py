@@ -6,6 +6,7 @@ from apps.billing.views import InvoiceViewSet
 from apps.core.views import (
     AuditLogViewSet,
     DashboardView,
+    DayCloseView,
     NotificationViewSet,
     ShopSettingView,
 )
@@ -30,5 +31,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('settings/', ShopSettingView.as_view(), name='settings'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('day-close/', DayCloseView.as_view(), name='day-close'),
     path('reports/<str:key>/', report_view, name='report'),
 ]

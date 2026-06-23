@@ -1,15 +1,16 @@
 import { useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Trash2, Printer, Check } from 'lucide-react'
+import { Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck } from 'lucide-react'
 import { api, inr } from '../lib/api'
-import type { Customer, Invoice, Medicine, Paginated } from '../lib/types'
-import { PageHeader, ScheduleBadge, Empty } from '../components/ui'
+import type { Customer, DayClose, Invoice, Medicine, Paginated, Prescription } from '../lib/types'
+import { PageHeader, ScheduleBadge, Empty, Modal } from '../components/ui'
 
 interface CartLine {
   medicine: Medicine
   quantity: number
   discount: number
 }
+type RxMap = Record<number, Omit<Prescription, 'medicine'>>
 
 export default function Billing() {
   const qc = useQueryClient()
@@ -18,7 +19,9 @@ export default function Billing() {
   const [customerId, setCustomerId] = useState<number | ''>('')
   const [paymentMode, setPaymentMode] = useState('cash')
   const [billDiscount, setBillDiscount] = useState(0)
+  const [rx, setRx] = useState<RxMap>({})
   const [saved, setSaved] = useState<Invoice | null>(null)
+  const [showDayClose, setShowDayClose] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const { data: meds } = useQuery({
@@ -34,6 +37,8 @@ export default function Billing() {
     queryFn: async () => (await api.get<Paginated<Customer>>('/customers/')).data.results,
   })
 
+  const scheduledLines = cart.filter((c) => c.medicine.schedule !== 'OTC')
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -43,12 +48,19 @@ export default function Billing() {
         items: cart.map((c) => ({
           medicine: c.medicine.id, quantity: c.quantity, discount: c.discount,
         })),
+        prescriptions: scheduledLines.map((c) => ({
+          medicine: c.medicine.id,
+          patient_name: rx[c.medicine.id]?.patient_name ?? '',
+          prescriber_name: rx[c.medicine.id]?.prescriber_name ?? '',
+          prescriber_reg_no: rx[c.medicine.id]?.prescriber_reg_no ?? '',
+          quantity: c.quantity,
+        })),
       }
       return (await api.post<Invoice>('/invoices/', payload)).data
     },
     onSuccess: (inv) => {
       setSaved(inv)
-      setCart([]); setBillDiscount(0); setCustomerId(''); setSearch('')
+      setCart([]); setBillDiscount(0); setCustomerId(''); setSearch(''); setRx({})
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.invalidateQueries({ queryKey: ['notifications'] })
     },
@@ -67,11 +79,17 @@ export default function Billing() {
   const setQty = (id: number, q: number) =>
     setCart((prev) => prev.map((c) => c.medicine.id === id ? { ...c, quantity: Math.max(1, q) } : c))
   const remove = (id: number) => setCart((prev) => prev.filter((c) => c.medicine.id !== id))
+  const setRxField = (id: number, field: keyof Omit<Prescription, 'medicine'>, val: string) =>
+    setRx((prev) => ({ ...prev, [id]: { ...(prev[id] ?? { patient_name: '', prescriber_name: '', prescriber_reg_no: '', quantity: 1 }), [field]: val } }))
+
+  const rxComplete = scheduledLines.every(
+    (c) => rx[c.medicine.id]?.patient_name && rx[c.medicine.id]?.prescriber_name
+  )
 
   const totals = useMemo(() => {
     let gross = 0, taxable = 0, gst = 0
     for (const c of cart) {
-      const mrp = Number(c.medicine.batches?.[0]?.mrp ?? 0)
+      const mrp = Number(c.medicine.sell_mrp ?? 0)
       const rate = Number(c.medicine.gst_rate)
       const lineGross = mrp * c.quantity - c.discount
       const lineTaxable = lineGross / (1 + rate / 100)
@@ -110,7 +128,15 @@ export default function Billing() {
 
   return (
     <div>
-      <PageHeader title="Billing" subtitle="FEFO issues the earliest-expiring batch automatically" />
+      <PageHeader
+        title="Billing"
+        subtitle="FEFO issues the earliest-expiring batch automatically"
+        actions={
+          <button className="btn-ghost" onClick={() => setShowDayClose(true)}>
+            <CalendarCheck size={16} /> Day close · cash recon
+          </button>
+        }
+      />
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Cart */}
         <div className="lg:col-span-2 space-y-4">
@@ -141,6 +167,7 @@ export default function Billing() {
                     </div>
                     <ScheduleBadge schedule={m.schedule} />
                     <div className="text-right text-[12px]">
+                      <div className="font-mono">{inr(m.sell_mrp ?? 0)}</div>
                       <div className={m.total_stock <= m.reorder_level ? 'text-warn font-semibold' : 'text-muted'}>
                         {m.total_stock} in stock
                       </div>
@@ -168,12 +195,15 @@ export default function Billing() {
                   <tr><td colSpan={6}><Empty>Cart is empty — search to add medicines.</Empty></td></tr>
                 )}
                 {cart.map((c) => {
-                  const mrp = Number(c.medicine.batches?.[0]?.mrp ?? 0)
+                  const mrp = Number(c.medicine.sell_mrp ?? 0)
                   const amount = mrp * c.quantity - c.discount
                   return (
                     <tr key={c.medicine.id}>
                       <td className="px-4 py-2.5">
-                        <div className="font-semibold">{c.medicine.name}</div>
+                        <div className="font-semibold flex items-center gap-2">
+                          {c.medicine.name}
+                          {c.medicine.schedule !== 'OTC' && <ScheduleBadge schedule={c.medicine.schedule} />}
+                        </div>
                         <div className="text-[11.5px] text-muted">
                           {c.medicine.pack_unit} · GST {c.medicine.gst_rate}%
                         </div>
@@ -202,6 +232,34 @@ export default function Billing() {
               </tbody>
             </table>
           </div>
+
+          {/* Prescription capture for scheduled drugs (FR-23) */}
+          {scheduledLines.length > 0 && (
+            <div className="card p-4 border-warn/40 bg-[#fdf3e7]/30">
+              <div className="flex items-center gap-2 mb-3">
+                <FileClock size={16} className="text-warn" />
+                <h3 className="font-bold text-[13.5px]">Prescription required (scheduled drugs)</h3>
+              </div>
+              <div className="space-y-3">
+                {scheduledLines.map((c) => (
+                  <div key={c.medicine.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                    <div className="md:col-span-1 text-[12.5px] font-semibold flex items-center gap-1.5">
+                      <ScheduleBadge schedule={c.medicine.schedule} /> {c.medicine.name}
+                    </div>
+                    <input placeholder="Patient name *" className="input !py-2"
+                      value={rx[c.medicine.id]?.patient_name ?? ''}
+                      onChange={(e) => setRxField(c.medicine.id, 'patient_name', e.target.value)} />
+                    <input placeholder="Prescriber name *" className="input !py-2"
+                      value={rx[c.medicine.id]?.prescriber_name ?? ''}
+                      onChange={(e) => setRxField(c.medicine.id, 'prescriber_name', e.target.value)} />
+                    <input placeholder="Reg. no" className="input !py-2"
+                      value={rx[c.medicine.id]?.prescriber_reg_no ?? ''}
+                      onChange={(e) => setRxField(c.medicine.id, 'prescriber_reg_no', e.target.value)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Checkout */}
@@ -247,20 +305,70 @@ export default function Billing() {
               <span className="font-bold text-[15px]">Total</span>
               <span className="font-bold text-[20px]">{inr(totals.total)}</span>
             </div>
+            {scheduledLines.length > 0 && !rxComplete && (
+              <p className="text-[12px] text-warn">Enter patient &amp; prescriber for each scheduled drug to bill.</p>
+            )}
             {save.isError && (
               <p className="text-[12px] text-danger">
                 {(save.error as any)?.response?.data?.detail ??
                  JSON.stringify((save.error as any)?.response?.data) ?? 'Could not save bill.'}
               </p>
             )}
-            <button disabled={!cart.length || save.isPending}
+            <button disabled={!cart.length || save.isPending || (scheduledLines.length > 0 && !rxComplete)}
               onClick={() => save.mutate()} className="btn-primary w-full justify-center py-3 text-[14px]">
               {save.isPending ? 'Saving…' : 'Save & bill'}
             </button>
           </div>
         </div>
       </div>
+
+      {showDayClose && <DayCloseModal onClose={() => setShowDayClose(false)} />}
     </div>
+  )
+}
+
+function DayCloseModal({ onClose }: { onClose: () => void }) {
+  const { data } = useQuery({
+    queryKey: ['day-close'],
+    queryFn: async () => (await api.get<DayClose>('/day-close/')).data,
+  })
+  return (
+    <Modal title="Day close · cash reconciliation" onClose={onClose}>
+      {!data ? <Empty>Loading…</Empty> : (
+        <div className="space-y-4">
+          <div className="text-[12px] text-muted">For {data.date}</div>
+          <div className="grid grid-cols-2 gap-3">
+            <Info label="Bills" value={String(data.invoice_count)} />
+            <Info label="Gross sales" value={inr(data.gross_total)} />
+            <Info label="Cash in drawer" value={inr(data.cash_total)} />
+            <Info label="GST collected" value={inr(data.tax_collected)} />
+          </div>
+          <div className="card overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead className="bg-canvas text-muted text-[11px] uppercase">
+                <tr><th className="text-left px-3 py-2">Payment mode</th>
+                  <th className="text-right px-2">Bills</th>
+                  <th className="text-right px-3">Amount</th></tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {Object.entries(data.by_mode).map(([mode, v]) => (
+                  <tr key={mode}>
+                    <td className="px-3 py-2 capitalize">{mode}</td>
+                    <td className="px-2 text-right">{v.count}</td>
+                    <td className="px-3 text-right font-mono">{inr(v.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {data.returned_count > 0 && (
+            <p className="text-[12px] text-danger">
+              {data.returned_count} returned bill(s) · {inr(data.returned_total)}
+            </p>
+          )}
+        </div>
+      )}
+    </Modal>
   )
 }
 

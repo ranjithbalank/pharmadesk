@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -95,4 +95,46 @@ class DashboardView(APIView):
             'near_expiry_count': near,
             'expired_count': expired,
             'alert_count': Notification.objects.filter(is_dismissed=False).count(),
+        })
+
+
+class DayCloseView(APIView):
+    """End-of-day sales summary / cash reconciliation (FR-20).
+
+    Returns the day's takings split by payment mode so the counter can
+    reconcile the cash drawer. Pass ?date=YYYY-MM-DD for any past day.
+    """
+
+    def get(self, request):
+        date_str = request.query_params.get('date')
+        day = (
+            timezone.datetime.fromisoformat(date_str).date()
+            if date_str else timezone.localdate()
+        )
+        invoices = Invoice.objects.filter(created_at__date=day)
+
+        by_mode = {
+            row['payment_mode']: {
+                'count': row['n'], 'total': row['t'] or 0,
+            }
+            for row in invoices.values('payment_mode').annotate(
+                n=Count('id'), t=Sum('total')
+            )
+        }
+        modes = {
+            mode: by_mode.get(mode, {'count': 0, 'total': 0})
+            for mode, _ in Invoice.PaymentMode.choices
+        }
+        returned = invoices.filter(status=Invoice.Status.RETURNED)
+
+        return Response({
+            'date': day.isoformat(),
+            'invoice_count': invoices.count(),
+            'gross_total': invoices.aggregate(s=Sum('total'))['s'] or 0,
+            'by_mode': modes,
+            'cash_total': modes['cash']['total'],
+            'returned_count': returned.count(),
+            'returned_total': returned.aggregate(s=Sum('total'))['s'] or 0,
+            'tax_collected': (invoices.aggregate(c=Sum('cgst'))['c'] or 0)
+            + (invoices.aggregate(s=Sum('sgst'))['s'] or 0),
         })

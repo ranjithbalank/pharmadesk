@@ -71,6 +71,21 @@ class Medicine(models.Model):
         """Scheduled drug requiring prescription capture (H/H1/X)."""
         return self.schedule in {self.Schedule.H, self.Schedule.H1, self.Schedule.X}
 
+    @property
+    def fefo_batch(self):
+        """The batch that billing will issue next: earliest-expiring stock."""
+        return (
+            self.batches.filter(quantity__gt=0, expiry_date__gte=timezone.localdate())
+            .order_by('expiry_date', 'received_at')
+            .first()
+        )
+
+    @property
+    def sell_mrp(self):
+        """MRP of the next batch to be issued — the price shown at billing."""
+        batch = self.fefo_batch
+        return batch.mrp if batch else 0
+
 
 class Batch(models.Model):
     """A received lot of a medicine (FR-2). Stock lives here so expiry and

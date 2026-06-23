@@ -96,7 +96,13 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
                 line.received_qty += qty
                 line.save(update_fields=['received_qty'])
 
-            fully = all(l.outstanding_qty == 0 for l in po.lines.all())
+            # Re-read lines from the DB — the viewset prefetches `lines`, so
+            # po.lines.all() would otherwise serve a stale (pre-receipt) cache.
+            fresh_lines = PurchaseOrderLine.objects.filter(order=po)
+            fully = all(l.outstanding_qty == 0 for l in fresh_lines)
             po.status = PurchaseOrder.Status.RECEIVED if fully else PurchaseOrder.Status.PARTIAL
             po.save(update_fields=['status'])
+
+        # Return a fresh instance so received quantities reflect the receipt.
+        po = self.get_queryset().get(pk=po.pk)
         return Response(self.get_serializer(po).data)

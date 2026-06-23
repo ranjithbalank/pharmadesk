@@ -35,7 +35,27 @@ export interface Medicine {
   total_stock: number
   stock_status: StockStatus
   is_scheduled?: boolean
+  sell_mrp?: string
   batches?: Batch[]
+}
+
+export interface DayClose {
+  date: string
+  invoice_count: number
+  gross_total: number
+  by_mode: Record<string, { count: number; total: number }>
+  cash_total: number
+  returned_count: number
+  returned_total: number
+  tax_collected: number
+}
+
+export interface Prescription {
+  medicine: number
+  patient_name: string
+  prescriber_name: string
+  prescriber_reg_no: string
+  quantity: number
 }
 
 export interface InvoiceLine {

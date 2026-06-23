@@ -22,6 +22,7 @@ class MedicineSerializer(serializers.ModelSerializer):
     total_stock = serializers.IntegerField(read_only=True)
     stock_status = serializers.CharField(read_only=True)
     is_scheduled = serializers.BooleanField(read_only=True)
+    sell_mrp = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     schedule_display = serializers.CharField(source='get_schedule_display', read_only=True)
     batches = BatchSerializer(many=True, read_only=True)
 
@@ -32,7 +33,7 @@ class MedicineSerializer(serializers.ModelSerializer):
             'schedule', 'schedule_display', 'pack_unit', 'rack_location', 'barcode',
             'reorder_level', 'reorder_qty', 'min_stock', 'max_stock',
             'preferred_supplier', 'is_active', 'total_stock', 'stock_status',
-            'is_scheduled', 'batches', 'created_at',
+            'is_scheduled', 'sell_mrp', 'batches', 'created_at',
         ]
 
 
@@ -41,6 +42,8 @@ class MedicineListSerializer(serializers.ModelSerializer):
 
     total_stock = serializers.IntegerField(read_only=True)
     stock_status = serializers.CharField(read_only=True)
+    is_scheduled = serializers.BooleanField(read_only=True)
+    sell_mrp = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Medicine
@@ -48,6 +51,7 @@ class MedicineListSerializer(serializers.ModelSerializer):
             'id', 'name', 'generic_name', 'manufacturer', 'hsn_code', 'gst_rate',
             'schedule', 'pack_unit', 'rack_location', 'barcode',
             'reorder_level', 'reorder_qty', 'is_active', 'total_stock', 'stock_status',
+            'is_scheduled', 'sell_mrp',
         ]
 
 
