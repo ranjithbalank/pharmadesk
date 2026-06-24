@@ -122,6 +122,33 @@ export default function SettingsPage() {
         title="Lead times" endpoint="/lead-times/" qkey="lead-times"
         fields={[{ k: 'label', label: 'Label', ph: 'Next day' }, { k: 'days', label: 'Days', type: 'number' }]}
         render={(r: LeadTime) => `${r.label} · ${r.days}d`} />
+
+      <ChangePassword />
+    </div>
+  )
+}
+
+function ChangePassword() {
+  const [cur, setCur] = useState('')
+  const [next, setNext] = useState('')
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const save = useMutation({
+    mutationFn: () => api.post('/auth/change-password/', { current_password: cur, new_password: next }),
+    onSuccess: () => { setMsg({ ok: true, text: 'Password changed.' }); setCur(''); setNext('') },
+    onError: (e: any) => setMsg({ ok: false, text: e?.response?.data?.detail ?? 'Could not change password.' }),
+  })
+  return (
+    <div className="card p-5 mb-8">
+      <h3 className="font-bold text-[14px] mb-1">Login password</h3>
+      <p className="text-[11.5px] text-muted mb-4">Single shared counter login. Change it from the default after go-live.</p>
+      <div className="grid grid-cols-2 gap-4 max-w-md">
+        <F label="Current password" v={cur} on={setCur} type="password" />
+        <F label="New password" v={next} on={setNext} type="password" />
+      </div>
+      {msg && <p className={`text-[12px] mt-2 ${msg.ok ? 'text-ok' : 'text-danger'}`}>{msg.text}</p>}
+      <button className="btn-primary mt-4" disabled={!cur || !next || save.isPending} onClick={() => save.mutate()}>
+        {save.isPending ? 'Updating…' : 'Update password'}
+      </button>
     </div>
   )
 }

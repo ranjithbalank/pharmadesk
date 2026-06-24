@@ -10,6 +10,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.billing.services import allocate_fefo
+from apps.core.testbase import AuthedAPITestCase
 from apps.inventory.models import Batch, Medicine, StockMovement
 
 
@@ -92,13 +93,13 @@ class FefoTests(TestCase):
             allocate_fefo(med, 10)
 
 
-class ExpiryValidationTests(TestCase):
+class ExpiryValidationTests(AuthedAPITestCase):
     def test_expired_batch_rejected_by_api(self):
         med = make_medicine()
         resp = self.client.post('/api/batches/', data={
             'medicine': med.id, 'batch_number': 'OLD',
             'expiry_date': '2020-01-01', 'mrp': 5,
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 400)
         self.assertIn('expiry_date', resp.json())
 
@@ -107,7 +108,7 @@ class ExpiryValidationTests(TestCase):
         resp = self.client.post('/api/batches/', data={
             'medicine': med.id, 'batch_number': 'BAD',
             'mfg_date': '2027-01-01', 'expiry_date': '2026-01-01', 'mrp': 5,
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 400)
 
     def test_future_batch_accepted(self):
@@ -116,11 +117,11 @@ class ExpiryValidationTests(TestCase):
             'medicine': med.id, 'batch_number': 'GOOD',
             'expiry_date': (timezone.localdate() + timedelta(days=365)).isoformat(),
             'quantity': 50, 'mrp': 10,
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 201)
 
 
-class AdjustmentReverseTests(TestCase):
+class AdjustmentReverseTests(AuthedAPITestCase):
     def test_reverse_adjustment_restores_stock(self):
         med = make_medicine()
         batch = make_batch(med, 20)

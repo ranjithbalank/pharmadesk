@@ -1,10 +1,10 @@
 """Tests for alerts (FR-27..30) and the day-close summary (FR-20)."""
 from django.test import TestCase
-from django.urls import reverse
 
 from apps.billing.services import create_invoice
 from apps.core.models import Notification
 from apps.core.services import recompute_notifications
+from apps.core.testbase import AuthedAPITestCase
 from apps.inventory.tests import make_batch, make_medicine
 
 
@@ -46,7 +46,7 @@ class NotificationTests(TestCase):
         self.assertEqual(Notification.objects.filter(kind='low_stock', medicine=med).count(), 1)
 
 
-class DayCloseApiTests(TestCase):
+class DayCloseApiTests(AuthedAPITestCase):
     def test_day_close_totals_by_mode(self):
         med = make_medicine(gst_rate=12)
         make_batch(med, 100, mrp=112)

@@ -1,9 +1,12 @@
 from datetime import timedelta
 
+from django.contrib.auth import authenticate
 from django.db.models import Count, Sum
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import status, viewsets
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,6 +20,55 @@ from .serializers import (
     ShopSettingSerializer,
 )
 from .services import recompute_notifications
+
+
+class LoginView(APIView):
+    """SEC-1 single shared login. Exchanges username + password for a token."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        username = (request.data.get('username') or '').strip()
+        password = request.data.get('password') or ''
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({'detail': 'Incorrect username or password.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        token, _ = Token.objects.get_or_create(user=user)
+        AuditLog.objects.create(action='login', actor=user.username)
+        return Response({'token': token.key, 'username': user.username,
+                         'shop_name': ShopSetting.load().shop_name})
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        Token.objects.filter(user=request.user).delete()
+        return Response({'status': 'ok'})
+
+
+class MeView(APIView):
+    """Returns the logged-in user — the SPA uses it to validate a saved token."""
+    def get(self, request):
+        return Response({'username': request.user.username,
+                         'shop_name': ShopSetting.load().shop_name})
+
+
+class ChangePasswordView(APIView):
+    def post(self, request):
+        current = request.data.get('current_password') or ''
+        new = request.data.get('new_password') or ''
+        if not request.user.check_password(current):
+            return Response({'detail': 'Current password is incorrect.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if len(new) < 4:
+            return Response({'detail': 'New password is too short.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        request.user.set_password(new)
+        request.user.save()
+        Token.objects.filter(user=request.user).delete()
+        token = Token.objects.create(user=request.user)
+        AuditLog.objects.create(action='password_change', actor=request.user.username)
+        return Response({'token': token.key})
 
 
 class ShopSettingView(APIView):

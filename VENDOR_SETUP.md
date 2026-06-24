@@ -93,6 +93,17 @@ A PharmaDesk window opens. Everything runs locally on this PC — no internet
 needed. (If the window doesn't open on this machine, use
 `start-desktop.bat --browser` to open it in the default browser instead.)
 
+### Sign in (single shared login)
+
+Default credentials on first launch:
+
+- **Username:** `admin`
+- **Password:** `pharmadesk`
+
+**Change the password** right after go-live: **Settings → Login password**.
+(You can also set custom defaults before first run with the `PHARMADESK_USER`
+and `PHARMADESK_PASSWORD` environment variables.)
+
 ### Make it start automatically + back up daily
 
 ```powershell

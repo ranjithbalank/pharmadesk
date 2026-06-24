@@ -2,10 +2,10 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   LayoutGrid, ReceiptText, Boxes, ShoppingCart, Truck, Users,
-  BarChart3, Settings, Menu, Bell, X, Phone, Building2, ChevronRight,
+  BarChart3, Settings, Menu, Bell, X, Phone, Building2, ChevronRight, LogOut,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { api } from '../lib/api'
+import { api, clearToken } from '../lib/api'
 import type { Dashboard, NotificationItem } from '../lib/types'
 
 const NAV = [
@@ -241,6 +241,15 @@ export default function Layout() {
                     className="w-full flex items-center justify-between px-4 py-2.5 border-t border-line text-[12.5px] font-semibold text-accent hover:bg-canvas/60"
                   >
                     Edit shop details <ChevronRight size={15} />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try { await api.post('/auth/logout/') } catch { /* ignore */ }
+                      clearToken(); window.location.reload()
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 border-t border-line text-[12.5px] font-semibold text-danger hover:bg-[#fdeceb]/50"
+                  >
+                    <LogOut size={14} /> Sign out
                   </button>
                 </div>
               </>
