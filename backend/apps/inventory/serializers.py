@@ -21,8 +21,12 @@ class BatchSerializer(serializers.ModelSerializer):
         read_only_fields = ['quantity', 'loose_units', 'received_at']
 
     def validate(self, attrs):
-        """Run the model's expiry validation (item 12) on add/edit so expired
-        stock can never be entered through the API."""
+        """Run the model's expiry validation (item 12) on add, or on edits that
+        change the dates. A price-only edit must not be blocked just because an
+        existing batch is already past expiry."""
+        editing_dates = 'expiry_date' in attrs or 'mfg_date' in attrs
+        if self.instance and not editing_dates:
+            return attrs
         instance = Batch(**{**self._instance_data(), **attrs})
         try:
             instance.clean()

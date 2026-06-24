@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Layers, Pencil, Info, RotateCcw } from 'lucide-react'
-import { api, inr } from '../lib/api'
-import type { Medicine, Paginated, StockMovement, Supplier } from '../lib/types'
+import { Plus, Search, Layers, Pencil, Info, RotateCcw, Check } from 'lucide-react'
+import { api } from '../lib/api'
+import type { Batch, Medicine, Paginated, StockMovement, Supplier } from '../lib/types'
 import { PageHeader, StatusBadge, ScheduleBadge, Empty, Modal } from '../components/ui'
 
 const SCHEDULES = ['OTC', 'H', 'H1', 'X']
@@ -249,26 +249,21 @@ function BatchModal({ medicine, onClose }: { medicine: Medicine; onClose: () => 
                   <th className="text-left px-3 py-2">Batch</th>
                   <th className="text-left px-2">Expiry</th>
                   <th className="text-right px-2">Qty</th>
-                  <th className="text-right px-2">MRP</th>
-                  <th className="text-right px-3">Days left</th>
+                  <th className="text-right px-2">Cost</th>
+                  <th className="text-right px-2">MRP / price</th>
+                  <th className="text-right px-3">Days</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {!data?.batches?.length && <tr><td colSpan={5}><Empty>No batches yet.</Empty></td></tr>}
+                {!data?.batches?.length && <tr><td colSpan={7}><Empty>No batches yet.</Empty></td></tr>}
                 {data?.batches?.map((b) => (
-                  <tr key={b.id} className={b.days_to_expiry <= 90 ? 'bg-[#fdf3e7]/40' : ''}>
-                    <td className="px-3 py-2 font-mono">{b.batch_number}</td>
-                    <td className="px-2">{b.expiry_date}</td>
-                    <td className="px-2 text-right">{b.quantity}</td>
-                    <td className="px-2 text-right">{inr(b.mrp)}</td>
-                    <td className={`px-3 text-right font-semibold ${b.days_to_expiry <= 90 ? 'text-warn' : 'text-muted'}`}>
-                      {b.days_to_expiry}
-                    </td>
-                  </tr>
+                  <BatchPriceRow key={b.id} batch={b} onSaved={refresh} />
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="text-[11.5px] text-muted mb-3">Edit a batch's <b>Cost</b> or <b>MRP/price</b> above and click ✓ to save. Billing uses the MRP of the earliest-expiring batch.</p>
 
           <div className="text-[12px] font-semibold text-muted mb-2">Add / receive batch</div>
           <div className="grid grid-cols-3 gap-3">
@@ -374,6 +369,42 @@ function AdjustTab({ medicine, batches, onChange }: { medicine: Medicine; batche
         </table>
       </div>
     </div>
+  )
+}
+
+function BatchPriceRow({ batch, onSaved }: { batch: Batch; onSaved: () => void }) {
+  const [cost, setCost] = useState(String(batch.purchase_cost))
+  const [mrp, setMrp] = useState(String(batch.mrp))
+  const dirty = cost !== String(batch.purchase_cost) || mrp !== String(batch.mrp)
+  const save = useMutation({
+    mutationFn: () => api.patch(`/batches/${batch.id}/`, { purchase_cost: cost, mrp }),
+    onSuccess: onSaved,
+  })
+  return (
+    <tr className={batch.days_to_expiry <= 90 ? 'bg-[#fdf3e7]/40' : ''}>
+      <td className="px-3 py-2 font-mono">{batch.batch_number}</td>
+      <td className="px-2">{batch.expiry_date}</td>
+      <td className="px-2 text-right">{batch.quantity}</td>
+      <td className="px-2 text-right">
+        <input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)}
+          className="w-20 text-right border border-line rounded-md py-1 px-1.5" />
+      </td>
+      <td className="px-2 text-right">
+        <input type="number" min={0} value={mrp} onChange={(e) => setMrp(e.target.value)}
+          className="w-20 text-right border border-line rounded-md py-1 px-1.5 font-semibold" />
+      </td>
+      <td className={`px-3 text-right font-semibold ${batch.days_to_expiry <= 90 ? 'text-warn' : 'text-muted'}`}>
+        {batch.days_to_expiry}
+      </td>
+      <td className="px-2 text-right">
+        {dirty && (
+          <button onClick={() => save.mutate()} disabled={save.isPending}
+            className="text-ok hover:bg-[#eaf6ee] rounded p-1" title="Save price">
+            <Check size={16} />
+          </button>
+        )}
+      </td>
+    </tr>
   )
 }
 
