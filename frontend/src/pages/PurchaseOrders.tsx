@@ -269,12 +269,30 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
                 <span className="text-muted font-normal"> · {l.outstanding_qty ?? (l.quantity - (l.received_qty ?? 0))} pending</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                <input placeholder="Batch no *" className="input !py-2" value={rows[l.id!]?.batch_number ?? ''} onChange={(e) => setRow(l.id!, 'batch_number', e.target.value)} />
-                <input type="date" title="Expiry *" className="input !py-2" value={rows[l.id!]?.expiry_date ?? ''} onChange={(e) => setRow(l.id!, 'expiry_date', e.target.value)} />
-                <input type="date" title="Mfg date" className="input !py-2" value={rows[l.id!]?.mfg_date ?? ''} onChange={(e) => setRow(l.id!, 'mfg_date', e.target.value)} />
-                <input type="number" placeholder="Qty *" className="input !py-2" value={rows[l.id!]?.quantity ?? ''} onChange={(e) => setRow(l.id!, 'quantity', e.target.value)} />
-                <input type="number" placeholder="Cost" className="input !py-2" value={rows[l.id!]?.purchase_cost ?? ''} onChange={(e) => setRow(l.id!, 'purchase_cost', e.target.value)} />
-                <input type="number" placeholder="MRP" className="input !py-2" value={rows[l.id!]?.mrp ?? ''} onChange={(e) => setRow(l.id!, 'mrp', e.target.value)} />
+                <div>
+                  <label className="label !mb-0.5">Batch no *</label>
+                  <input placeholder="e.g. B1234" className="input !py-2" value={rows[l.id!]?.batch_number ?? ''} onChange={(e) => setRow(l.id!, 'batch_number', e.target.value)} />
+                </div>
+                <div>
+                  <label className="label !mb-0.5">Mfg date</label>
+                  <input type="date" className="input !py-2" value={rows[l.id!]?.mfg_date ?? ''} onChange={(e) => setRow(l.id!, 'mfg_date', e.target.value)} />
+                </div>
+                <div>
+                  <label className="label !mb-0.5 text-danger">Expiry date *</label>
+                  <input type="date" className="input !py-2" value={rows[l.id!]?.expiry_date ?? ''} onChange={(e) => setRow(l.id!, 'expiry_date', e.target.value)} />
+                </div>
+                <div>
+                  <label className="label !mb-0.5">Qty *</label>
+                  <input type="number" placeholder="0" className="input !py-2" value={rows[l.id!]?.quantity ?? ''} onChange={(e) => setRow(l.id!, 'quantity', e.target.value)} />
+                </div>
+                <div>
+                  <label className="label !mb-0.5">Cost / unit</label>
+                  <input type="number" placeholder="0.00" className="input !py-2" value={rows[l.id!]?.purchase_cost ?? ''} onChange={(e) => setRow(l.id!, 'purchase_cost', e.target.value)} />
+                </div>
+                <div>
+                  <label className="label !mb-0.5">MRP</label>
+                  <input type="number" placeholder="0.00" className="input !py-2" value={rows[l.id!]?.mrp ?? ''} onChange={(e) => setRow(l.id!, 'mrp', e.target.value)} />
+                </div>
               </div>
             </div>
           ))}
