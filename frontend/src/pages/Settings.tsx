@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Save, Check, Plus, Trash2, Upload } from 'lucide-react'
-import { api } from '../lib/api'
+import { api, putForm } from '../lib/api'
 import type { LeadTime, Paginated, PaymentTerm } from '../lib/types'
 import { PageHeader, Empty } from '../components/ui'
 
@@ -25,22 +25,28 @@ export default function SettingsPage() {
   })
   useEffect(() => { if (data) setForm(data) }, [data])
 
+  const [err, setErr] = useState('')
   const save = useMutation({
     mutationFn: () => {
       // Multipart so the logo (if chosen) uploads alongside the text fields.
       const fd = new FormData()
       Object.entries(form ?? {}).forEach(([k, v]) => {
-        if (k === 'logo') return
-        fd.append(k, typeof v === 'boolean' ? String(v) : (v ?? '') as string)
+        if (k === 'logo' || k === 'updated_at' || v == null) return
+        fd.append(k, typeof v === 'boolean' ? String(v) : String(v))
       })
       if (logoFile) fd.append('logo', logoFile)
-      return api.put('/settings/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      return putForm('/settings/', fd)
     },
     onSuccess: () => {
-      setDone(true); setLogoFile(null)
+      setDone(true); setLogoFile(null); setErr('')
       qc.invalidateQueries({ queryKey: ['settings'] })
+      qc.invalidateQueries({ queryKey: ['shop'] })
       setTimeout(() => setDone(false), 2000)
     },
+    onError: (e: any) => setErr(
+      typeof e?.response?.data === 'object'
+        ? Object.entries(e.response.data).map(([k, v]) => `${k}: ${v}`).join('; ')
+        : 'Could not save settings.'),
   })
 
   if (!form) return null
@@ -101,9 +107,12 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <button className="btn-primary mb-8" disabled={save.isPending} onClick={() => save.mutate()}>
-        {done ? <><Check size={16} /> Saved</> : <><Save size={16} /> {save.isPending ? 'Saving…' : 'Save settings'}</>}
-      </button>
+      <div className="mb-8">
+        <button className="btn-primary" disabled={save.isPending} onClick={() => save.mutate()}>
+          {done ? <><Check size={16} /> Saved</> : <><Save size={16} /> {save.isPending ? 'Saving…' : 'Save settings'}</>}
+        </button>
+        {err && <p className="text-[12px] text-danger mt-2">{err}</p>}
+      </div>
 
       <MasterEditor
         title="Payment terms" endpoint="/payment-terms/" qkey="payment-terms"

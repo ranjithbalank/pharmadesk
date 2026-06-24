@@ -5,6 +5,13 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+/** PUT multipart form data (e.g. settings with a logo file). Lets the browser
+ * set Content-Type with the correct boundary — never set it by hand, or the
+ * server can't parse the upload. */
+export async function putForm<T = unknown>(url: string, fd: FormData) {
+  return axios.put<T>('/api' + url, fd)
+}
+
 /** Trigger a browser download for a binary export endpoint (xlsx / pdf). */
 export async function downloadFile(url: string, filename: string) {
   const res = await api.get(url, { responseType: 'blob' })
