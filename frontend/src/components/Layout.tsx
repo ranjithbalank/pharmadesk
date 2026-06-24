@@ -4,7 +4,7 @@ import {
   LayoutGrid, ReceiptText, Boxes, ShoppingCart, Truck, Users,
   BarChart3, Settings, Menu, Bell, X, Phone, Building2, ChevronRight,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import type { Dashboard, NotificationItem } from '../lib/types'
 
@@ -60,6 +60,15 @@ export default function Layout() {
     mutationFn: (id: number) => api.post(`/notifications/${id}/dismiss/`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
+
+  // Counter shortcut: F2 jumps to Billing from anywhere (F3 focuses search there).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'F2') { e.preventDefault(); navigate('/billing') }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [navigate])
 
   const alertCount = notes?.length ?? data?.alert_count ?? 0
   const title = TITLES[loc.pathname] ?? 'PharmaDesk'

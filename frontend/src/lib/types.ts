@@ -32,10 +32,16 @@ export interface Medicine {
   max_stock: number | null
   preferred_supplier: number | null
   is_active: boolean
+  med_type?: string
+  med_type_display?: string
+  units_per_pack?: number
   total_stock: number
+  total_units?: number
   stock_status: StockStatus
   is_scheduled?: boolean
+  sells_loose?: boolean
   sell_mrp?: string
+  unit_price?: string
   batches?: Batch[]
 }
 
@@ -64,6 +70,7 @@ export interface InvoiceLine {
   hsn_code: string
   batch_number: string
   expiry_date: string | null
+  unit_mode?: string
   quantity: number
   mrp: string
   rate: string
@@ -168,7 +175,11 @@ export interface NotificationItem {
 export interface Dashboard {
   today_sales_total: number
   today_invoice_count: number
+  week_sales_total: number
   month_sales_total: number
+  credit_outstanding: number
+  range_sales_total: number | null
+  range_invoice_count: number | null
   medicine_count: number
   low_stock_count: number
   out_of_stock_count: number

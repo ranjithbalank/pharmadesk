@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck } from 'lucide-react'
 import { api, inr } from '../lib/api'
@@ -9,6 +9,7 @@ interface CartLine {
   medicine: Medicine
   quantity: number
   discount: number
+  unitMode: 'pack' | 'loose'
 }
 type RxMap = Record<number, Omit<Prescription, 'medicine'>>
 
@@ -60,6 +61,7 @@ export default function Billing() {
         discount: billDiscount,
         items: cart.map((c) => ({
           medicine: c.medicine.id, quantity: c.quantity, discount: c.discount,
+          unit_mode: c.unitMode,
         })),
         prescriptions: scheduledLines.map((c) => ({
           medicine: c.medicine.id,
@@ -86,12 +88,22 @@ export default function Billing() {
       const existing = prev.find((c) => c.medicine.id === m.id)
       if (existing)
         return prev.map((c) => c.medicine.id === m.id ? { ...c, quantity: c.quantity + 1 } : c)
-      return [...prev, { medicine: m, quantity: 1, discount: 0 }]
+      return [...prev, { medicine: m, quantity: 1, discount: 0, unitMode: 'pack' }]
     })
   }
   const setQty = (id: number, q: number) =>
     setCart((prev) => prev.map((c) => c.medicine.id === id ? { ...c, quantity: Math.max(1, q) } : c))
+  const setMode = (id: number, mode: 'pack' | 'loose') =>
+    setCart((prev) => prev.map((c) => c.medicine.id === id ? { ...c, unitMode: mode } : c))
   const remove = (id: number) => setCart((prev) => prev.filter((c) => c.medicine.id !== id))
+  // F3 focuses the medicine search (counter shortcut).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'F3') { e.preventDefault(); searchRef.current?.focus() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const setRxField = (id: number, field: keyof Omit<Prescription, 'medicine'>, val: string) =>
     setRx((prev) => ({ ...prev, [id]: { ...(prev[id] ?? { patient_name: '', prescriber_name: '', prescriber_reg_no: '', quantity: 1 }), [field]: val } }))
 
@@ -99,10 +111,15 @@ export default function Billing() {
     (c) => rx[c.medicine.id]?.patient_name && rx[c.medicine.id]?.prescriber_name
   )
 
+  const unitRate = (c: CartLine) =>
+    c.unitMode === 'loose'
+      ? Number(c.medicine.unit_price ?? 0)
+      : Number(c.medicine.sell_mrp ?? 0)
+
   const totals = useMemo(() => {
     let gross = 0, taxable = 0, gst = 0
     for (const c of cart) {
-      const mrp = Number(c.medicine.sell_mrp ?? 0)
+      const mrp = unitRate(c)
       const rate = Number(c.medicine.gst_rate)
       const lineGross = mrp * c.quantity - c.discount
       const lineTaxable = lineGross / (1 + rate / 100)
@@ -208,8 +225,9 @@ export default function Billing() {
                   <tr><td colSpan={6}><Empty>Cart is empty — search to add medicines.</Empty></td></tr>
                 )}
                 {cart.map((c) => {
-                  const mrp = Number(c.medicine.sell_mrp ?? 0)
-                  const amount = mrp * c.quantity - c.discount
+                  const rate = unitRate(c)
+                  const amount = rate * c.quantity - c.discount
+                  const loose = c.unitMode === 'loose'
                   return (
                     <tr key={c.medicine.id}>
                       <td className="px-4 py-2.5">
@@ -217,15 +235,29 @@ export default function Billing() {
                           {c.medicine.name}
                           {c.medicine.schedule !== 'OTC' && <ScheduleBadge schedule={c.medicine.schedule} />}
                         </div>
-                        <div className="text-[11.5px] text-muted">
-                          {c.medicine.pack_unit} · GST {c.medicine.gst_rate}%
+                        <div className="text-[11.5px] text-muted flex items-center gap-2">
+                          <span>{c.medicine.pack_unit} · GST {c.medicine.gst_rate}%</span>
+                          {c.medicine.sells_loose && (
+                            <span className="inline-flex rounded-md overflow-hidden border border-line">
+                              {(['pack', 'loose'] as const).map((m) => (
+                                <button key={m} onClick={() => setMode(c.medicine.id, m)}
+                                  className={`px-1.5 py-0.5 text-[10px] font-semibold capitalize ${
+                                    c.unitMode === m ? 'bg-accent text-white' : 'text-muted'}`}>
+                                  {m === 'loose' ? `loose (×${c.medicine.units_per_pack})` : 'pack'}
+                                </button>
+                              ))}
+                            </span>
+                          )}
                         </div>
                       </td>
-                      <td className="text-right px-2 font-mono">{mrp.toFixed(2)}</td>
+                      <td className="text-right px-2 font-mono">
+                        {rate.toFixed(2)}{loose && <span className="text-[10px] text-muted">/unit</span>}
+                      </td>
                       <td className="text-center px-2">
                         <input type="number" min={1} value={c.quantity}
                           onChange={(e) => setQty(c.medicine.id, Number(e.target.value))}
                           className="w-14 text-center border border-line rounded-md py-1" />
+                        {loose && <div className="text-[9px] text-muted">tablets</div>}
                       </td>
                       <td className="px-2">
                         <input type="number" min={0} value={c.discount}

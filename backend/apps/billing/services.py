@@ -60,6 +60,52 @@ def allocate_fefo(medicine, quantity):
     return allocations
 
 
+def allocate_fefo_units(medicine, units):
+    """FEFO allocation for loose-unit sales (e.g. 3 tablets). Returns a list of
+    (batch, units) using each batch's loose-equivalent availability."""
+    remaining = units
+    allocations = []
+    batches = (
+        Batch.objects.filter(medicine=medicine, expiry_date__gte=timezone.localdate())
+        .order_by('expiry_date', 'received_at')
+    )
+    for batch in batches:
+        if remaining <= 0:
+            break
+        avail = batch.available_units
+        if avail <= 0:
+            continue
+        take = min(avail, remaining)
+        allocations.append((batch, take))
+        remaining -= take
+
+    if remaining > 0:
+        raise serializers.ValidationError(
+            f'Insufficient stock for "{medicine.name}": requested {units} unit(s), '
+            f'available {units - remaining}.'
+        )
+    return allocations
+
+
+def _dispense_loose(batch, units):
+    """Remove `units` loose units from a batch, opening whole packs as needed.
+    Packs opened are posted to the ledger; the opened-pack remainder is tracked
+    in batch.loose_units (a counter, not a ledger quantity)."""
+    import math
+    upp = batch.medicine.units_per_pack or 1
+    from_loose = min(batch.loose_units, units)
+    new_loose = batch.loose_units - from_loose
+    remaining = units - from_loose
+    packs_to_open = math.ceil(remaining / upp) if remaining > 0 else 0
+    new_loose += packs_to_open * upp - remaining
+    if packs_to_open:
+        StockMovement.objects.create(
+            batch=batch, reason=StockMovement.Reason.SALE, quantity=-packs_to_open,
+            note=f'opened {packs_to_open} pack(s) for {units} loose unit(s)',
+        )
+    Batch.objects.filter(pk=batch.pk).update(loose_units=new_loose)
+
+
 @transaction.atomic
 def create_invoice(*, customer, payment_mode, bill_discount, items, note='',
                    actor='counter', prescriptions=None):
@@ -89,11 +135,18 @@ def create_invoice(*, customer, payment_mode, bill_discount, items, note='',
         medicine = item['medicine']
         qty = item['quantity']
         line_discount = item.get('discount') or Decimal('0')
-        allocations = allocate_fefo(medicine, qty)
+        loose = item.get('unit_mode') == 'loose' and medicine.units_per_pack > 1
+        upp = medicine.units_per_pack or 1
+
+        allocations = (allocate_fefo_units(medicine, qty) if loose
+                       else allocate_fefo(medicine, qty))
 
         for batch, take in allocations:
             # Spread the line discount proportionally across split batches.
             share = (Decimal(take) / Decimal(qty)) * line_discount
+            # Loose lines price per unit (pack MRP / units per pack); pack lines
+            # price per pack at MRP.
+            rate = (batch.mrp / upp) if loose else batch.mrp
             line = InvoiceLine.objects.create(
                 invoice=invoice,
                 batch=batch,
@@ -101,19 +154,23 @@ def create_invoice(*, customer, payment_mode, bill_discount, items, note='',
                 hsn_code=medicine.hsn_code,
                 batch_number=batch.batch_number,
                 expiry_date=batch.expiry_date,
+                unit_mode='loose' if loose else 'pack',
                 quantity=take,
                 mrp=batch.mrp,
-                rate=batch.mrp,
+                rate=rate,
                 discount=share,
                 gst_rate=medicine.gst_rate,
             )
-            StockMovement.objects.create(
-                batch=batch,
-                reason=StockMovement.Reason.SALE,
-                quantity=-take,
-                note=f'{invoice.number} line {line.id}',
-                actor=actor,
-            )
+            if loose:
+                _dispense_loose(batch, take)
+            else:
+                StockMovement.objects.create(
+                    batch=batch,
+                    reason=StockMovement.Reason.SALE,
+                    quantity=-take,
+                    note=f'{invoice.number} line {line.id}',
+                    actor=actor,
+                )
 
     invoice.recalculate()
     invoice.save()

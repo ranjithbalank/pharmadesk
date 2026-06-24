@@ -7,6 +7,12 @@ import { PageHeader, StatusBadge, ScheduleBadge, Empty, Modal } from '../compone
 
 const SCHEDULES = ['OTC', 'H', 'H1', 'X']
 
+const MED_TYPES: [string, string][] = [
+  ['tablet', 'Tablet / capsule'], ['syrup', 'Syrup / liquid'], ['injection', 'Injection'],
+  ['drops', 'Drops'], ['ointment', 'Ointment / cream'], ['commercial', 'Commercial product'],
+  ['other', 'Other'],
+]
+
 const SCHEDULE_HELP: { code: string; title: string; desc: string }[] = [
   { code: 'OTC', title: 'Over the counter', desc: 'No prescription required.' },
   { code: 'H', title: 'Schedule H', desc: 'Prescription required to dispense.' },
@@ -88,7 +94,11 @@ export default function Inventory() {
               <tr key={m.id} className="hover:bg-canvas/60">
                 <td className="px-4 py-2.5">
                   <div className="font-semibold">{m.name}</div>
-                  <div className="text-[11.5px] text-muted">{m.generic_name} · {m.manufacturer}</div>
+                  <div className="text-[11.5px] text-muted">
+                    {m.generic_name} · {m.manufacturer}
+                    {m.med_type_display && <span> · {m.med_type_display}</span>}
+                    {m.sells_loose && <span className="text-accent"> · {m.units_per_pack}/pack</span>}
+                  </div>
                 </td>
                 <td className="px-2"><ScheduleBadge schedule={m.schedule} /></td>
                 <td className="px-2 text-muted font-mono text-[12px]">{m.rack_location || '—'}</td>
@@ -119,9 +129,11 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
   const isEdit = !!medicine
   const [form, setForm] = useState({
     name: medicine?.name ?? '', generic_name: medicine?.generic_name ?? '',
-    manufacturer: medicine?.manufacturer ?? '', hsn_code: medicine?.hsn_code ?? '',
+    manufacturer: medicine?.manufacturer ?? '', med_type: medicine?.med_type ?? 'tablet',
+    hsn_code: medicine?.hsn_code ?? '',
     gst_rate: String(medicine?.gst_rate ?? '12'), schedule: medicine?.schedule ?? 'OTC',
-    pack_unit: medicine?.pack_unit ?? '', rack_location: medicine?.rack_location ?? '',
+    pack_unit: medicine?.pack_unit ?? '', units_per_pack: String(medicine?.units_per_pack ?? '1'),
+    rack_location: medicine?.rack_location ?? '',
     barcode: medicine?.barcode ?? '', reorder_level: String(medicine?.reorder_level ?? '10'),
     reorder_qty: String(medicine?.reorder_qty ?? '50'),
     preferred_supplier: medicine?.preferred_supplier ? String(medicine.preferred_supplier) : '',
@@ -147,6 +159,12 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
         <Field label="Name *" v={form.name} on={(v) => set('name', v)} className="col-span-2" />
         <Field label="Generic / composition" v={form.generic_name} on={(v) => set('generic_name', v)} />
         <Field label="Manufacturer" v={form.manufacturer} on={(v) => set('manufacturer', v)} />
+        <div>
+          <label className="label">Type</label>
+          <select className="input" value={form.med_type} onChange={(e) => set('med_type', e.target.value)}>
+            {MED_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
         <Field label="HSN code" v={form.hsn_code} on={(v) => set('hsn_code', v)} />
         <div>
           <label className="label">GST rate %</label>
@@ -161,6 +179,12 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
           </select>
         </div>
         <Field label="Pack / unit" v={form.pack_unit} on={(v) => set('pack_unit', v)} />
+        <div>
+          <label className="label">Units per pack</label>
+          <input type="number" min={1} value={form.units_per_pack}
+            onChange={(e) => set('units_per_pack', e.target.value)} className="input" />
+          <p className="text-[10.5px] text-muted mt-0.5">e.g. 10 tablets/strip — enables loose sale. Use 1 for syrups.</p>
+        </div>
         <Field label="Rack location" v={form.rack_location} on={(v) => set('rack_location', v)} />
         <Field label="Barcode" v={form.barcode} on={(v) => set('barcode', v)} />
         <Field label="Reorder level" v={form.reorder_level} on={(v) => set('reorder_level', v)} type="number" />

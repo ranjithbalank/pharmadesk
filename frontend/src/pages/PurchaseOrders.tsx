@@ -37,6 +37,10 @@ export default function PurchaseOrders() {
     }),
     onSuccess: () => { setSuggestions(null); qc.invalidateQueries({ queryKey: ['purchase-orders'] }) },
   })
+  const setSuggestField = (si: number, li: number, field: 'quantity' | 'unit_cost', val: number) =>
+    setSuggestions((prev) => prev && prev.map((s, i) => i !== si ? s : {
+      ...s, lines: s.lines.map((l, j) => j !== li ? l : { ...l, [field]: Math.max(0, val) }),
+    }))
 
   return (
     <div>
@@ -83,6 +87,7 @@ export default function PurchaseOrders() {
       {suggestions && (
         <Modal title="Suggested reorder" onClose={() => setSuggestions(null)} wide>
           {suggestions.length === 0 && <Empty>Nothing to reorder — all items above reorder level.</Empty>}
+          <p className="text-[12px] text-muted mb-3">Adjust the strip/pack quantity and cost before sending to the agency.</p>
           <div className="space-y-4">
             {suggestions.map((s, i) => (
               <div key={i} className="card p-4">
@@ -96,11 +101,25 @@ export default function PurchaseOrders() {
                   </button>
                 </div>
                 <table className="w-full text-[12.5px]">
+                  <thead className="text-muted text-[11px] uppercase">
+                    <tr><th className="text-left py-1">Medicine</th>
+                      <th className="text-right px-2">Qty</th>
+                      <th className="text-right px-2">Unit cost</th></tr>
+                  </thead>
                   <tbody className="divide-y divide-line">
                     {s.lines.map((l, j) => (
                       <tr key={j}>
                         <td className="py-1.5">{l.medicine_name}</td>
-                        <td className="py-1.5 text-right text-muted">qty {l.quantity}</td>
+                        <td className="py-1.5 px-2 text-right">
+                          <input type="number" min={1} value={l.quantity}
+                            onChange={(e) => setSuggestField(i, j, 'quantity', Number(e.target.value))}
+                            className="w-16 text-right border border-line rounded-md py-1 px-1" />
+                        </td>
+                        <td className="py-1.5 px-2 text-right">
+                          <input type="number" min={0} value={l.unit_cost}
+                            onChange={(e) => setSuggestField(i, j, 'unit_cost', Number(e.target.value))}
+                            className="w-20 text-right border border-line rounded-md py-1 px-1" />
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -132,9 +151,19 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
   })
   const current = data ?? po
 
+  const [edits, setEdits] = useState<Record<number, number>>({})
   const place = useMutation({
     mutationFn: () => api.post(`/purchase-orders/${po.id}/place/`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchase-orders'] }); qc.invalidateQueries({ queryKey: ['purchase-order', po.id] }) },
+  })
+  const saveQty = useMutation({
+    mutationFn: () => api.patch(`/purchase-orders/${po.id}/`, {
+      lines: current.lines.map((l) => ({
+        medicine: l.medicine, unit_cost: l.unit_cost,
+        quantity: edits[l.id!] ?? l.quantity,
+      })),
+    }),
+    onSuccess: () => { setEdits({}); qc.invalidateQueries({ queryKey: ['purchase-orders'] }); qc.invalidateQueries({ queryKey: ['purchase-order', po.id] }) },
   })
   const receive = useMutation({
     mutationFn: () => api.post(`/purchase-orders/${po.id}/receive/`, {
@@ -177,6 +206,11 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
           <a className="btn-ghost !py-1.5" href={`/api/purchase-orders/${po.id}/pdf/`} target="_blank" rel="noreferrer">
             <FileText size={14} /> PDF
           </a>
+          {current.status === 'draft' && Object.keys(edits).length > 0 && (
+            <button className="btn-ghost !py-1.5" disabled={saveQty.isPending} onClick={() => saveQty.mutate()}>
+              Save quantities
+            </button>
+          )}
           {current.status === 'draft' && (
             <button className="btn-ghost !py-1.5" disabled={place.isPending} onClick={() => place.mutate()}>
               <Send size={14} /> Place order
@@ -212,7 +246,13 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
             {current.lines.map((l) => (
               <tr key={l.id}>
                 <td className="px-3 py-2">{l.medicine_name}</td>
-                <td className="px-2 text-right">{l.quantity}</td>
+                <td className="px-2 text-right">
+                  {current.status === 'draft' ? (
+                    <input type="number" min={1} value={edits[l.id!] ?? l.quantity}
+                      onChange={(e) => setEdits((p) => ({ ...p, [l.id!]: Math.max(1, Number(e.target.value)) }))}
+                      className="w-16 text-right border border-line rounded-md py-1 px-1" />
+                  ) : l.quantity}
+                </td>
                 <td className="px-2 text-right">{l.received_qty ?? 0}</td>
                 <td className="px-2 text-right font-semibold">{l.outstanding_qty ?? (l.quantity - (l.received_qty ?? 0))}</td>
                 <td className="px-3 text-right font-mono">{inr(l.unit_cost)}</td>

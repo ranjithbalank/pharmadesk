@@ -72,8 +72,10 @@ class DashboardView(APIView):
         recompute_notifications()
         today = timezone.localdate()
         month_start = today.replace(day=1)
+        week_start = today - timedelta(days=6)  # last 7 days inclusive
 
-        todays_invoices = Invoice.objects.filter(created_at__date=today)
+        non_returned = Invoice.objects.exclude(status=Invoice.Status.RETURNED)
+        todays_invoices = non_returned.filter(created_at__date=today)
         meds = Medicine.objects.filter(is_active=True)
         low = sum(1 for m in meds if m.stock_status == 'low_stock')
         oos = sum(1 for m in meds if m.stock_status == 'out_of_stock')
@@ -83,12 +85,29 @@ class DashboardView(APIView):
         ).count()
         expired = Batch.objects.filter(quantity__gt=0, expiry_date__lt=today).count()
 
+        # Total outstanding credit/khata across all customers.
+        from apps.customers.models import Customer
+        credit_outstanding = Customer.objects.aggregate(
+            s=Sum('credit_balance'))['s'] or 0
+
+        # Optional custom date range (?start=YYYY-MM-DD&end=YYYY-MM-DD).
+        range_total = range_count = None
+        start, end = request.query_params.get('start'), request.query_params.get('end')
+        if start and end:
+            ranged = non_returned.filter(created_at__date__gte=start, created_at__date__lte=end)
+            range_total = ranged.aggregate(s=Sum('total'))['s'] or 0
+            range_count = ranged.count()
+
         return Response({
             'today_sales_total': todays_invoices.aggregate(s=Sum('total'))['s'] or 0,
             'today_invoice_count': todays_invoices.count(),
-            'month_sales_total': Invoice.objects.filter(
-                created_at__date__gte=month_start
-            ).aggregate(s=Sum('total'))['s'] or 0,
+            'week_sales_total': non_returned.filter(
+                created_at__date__gte=week_start).aggregate(s=Sum('total'))['s'] or 0,
+            'month_sales_total': non_returned.filter(
+                created_at__date__gte=month_start).aggregate(s=Sum('total'))['s'] or 0,
+            'credit_outstanding': credit_outstanding,
+            'range_sales_total': range_total,
+            'range_invoice_count': range_count,
             'medicine_count': meds.count(),
             'low_stock_count': low,
             'out_of_stock_count': oos,

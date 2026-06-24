@@ -16,9 +16,19 @@ class Medicine(models.Model):
         H1 = 'H1', 'Schedule H1'
         X = 'X', 'Schedule X'
 
+    class MedType(models.TextChoices):
+        TABLET = 'tablet', 'Tablet / capsule'
+        SYRUP = 'syrup', 'Syrup / liquid'
+        INJECTION = 'injection', 'Injection'
+        DROPS = 'drops', 'Drops'
+        OINTMENT = 'ointment', 'Ointment / cream'
+        COMMERCIAL = 'commercial', 'Commercial product'
+        OTHER = 'other', 'Other'
+
     name = models.CharField(max_length=200, db_index=True)
     generic_name = models.CharField('Generic / composition', max_length=300, blank=True)
     manufacturer = models.CharField(max_length=200, blank=True)
+    med_type = models.CharField('Type', max_length=12, choices=MedType.choices, default=MedType.TABLET)
     hsn_code = models.CharField('HSN code', max_length=10, blank=True)
     gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=12)
     schedule = models.CharField(max_length=3, choices=Schedule.choices, default=Schedule.OTC)
@@ -26,6 +36,9 @@ class Medicine(models.Model):
     pack_unit = models.CharField(
         max_length=40, blank=True, help_text='e.g. "Strip of 10", "Bottle 100ml"'
     )
+    # How many sellable units are in one pack (e.g. 10 tablets per strip). 1 for
+    # items sold whole (syrups, commercial). Enables loose-unit sales at billing.
+    units_per_pack = models.PositiveIntegerField(default=1)
     rack_location = models.CharField(max_length=40, blank=True)
     barcode = models.CharField(max_length=64, blank=True, db_index=True)
 
@@ -86,6 +99,25 @@ class Medicine(models.Model):
         batch = self.fefo_batch
         return batch.mrp if batch else 0
 
+    @property
+    def sells_loose(self):
+        """True when this item can be sold in loose units (e.g. 2 tablets)."""
+        return self.units_per_pack > 1
+
+    @property
+    def unit_price(self):
+        """Per-unit (e.g. per-tablet) price = pack MRP / units per pack."""
+        upp = self.units_per_pack or 1
+        return (self.sell_mrp / upp) if upp else self.sell_mrp
+
+    @property
+    def total_units(self):
+        """Total loose-equivalent units in stock = packs*upp + opened remainders."""
+        upp = self.units_per_pack or 1
+        agg = self.batches.filter(expiry_date__gte=timezone.localdate()).aggregate(
+            packs=Sum('quantity'), loose=Sum('loose_units'))
+        return (agg['packs'] or 0) * upp + (agg['loose'] or 0)
+
 
 class Batch(models.Model):
     """A received lot of a medicine (FR-2). Stock lives here so expiry and
@@ -98,6 +130,9 @@ class Batch(models.Model):
     expiry_date = models.DateField(db_index=True)
 
     quantity = models.IntegerField(default=0)
+    # Loose units left from an opened pack (0 .. units_per_pack-1). Lets the
+    # counter dispense a few tablets from a strip without losing the rest.
+    loose_units = models.PositiveIntegerField(default=0)
     purchase_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     mrp = models.DecimalField('MRP', max_digits=10, decimal_places=2, default=0)
 
@@ -135,6 +170,12 @@ class Batch(models.Model):
     @property
     def days_to_expiry(self):
         return (self.expiry_date - timezone.localdate()).days
+
+    @property
+    def available_units(self):
+        """Loose-equivalent units available in this batch (packs*upp + loose)."""
+        upp = self.medicine.units_per_pack or 1
+        return self.quantity * upp + self.loose_units
 
 
 class StockMovement(models.Model):

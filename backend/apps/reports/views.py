@@ -75,6 +75,31 @@ def _sales(start, end):
     return cols, rows, 'Sales'
 
 
+def _bills(start, end):
+    """Every bill with line-level detail — one row per item sold (item 7)."""
+    cols = ['Invoice', 'Date', 'Customer', 'Phone', 'Payment', 'Status', 'Item',
+            'Batch', 'Expiry', 'Unit', 'Qty', 'Rate', 'GST%', 'Taxable', 'Tax', 'Amount']
+    rows = []
+    invoices = (Invoice.objects.filter(
+        created_at__date__gte=start, created_at__date__lte=end)
+        .select_related('customer').prefetch_related('lines').order_by('created_at'))
+    for inv in invoices:
+        cust = inv.customer
+        for line in inv.lines.all():
+            rows.append([
+                inv.number, inv.created_at.strftime('%Y-%m-%d %H:%M'),
+                cust.name if cust else 'Walk-in', cust.phone if cust else '',
+                inv.get_payment_mode_display(), inv.get_status_display(),
+                line.medicine_name, line.batch_number,
+                line.expiry_date.strftime('%m/%Y') if line.expiry_date else '',
+                'Loose' if line.unit_mode == 'loose' else 'Pack',
+                line.quantity, float(line.rate), float(line.gst_rate),
+                float(line.taxable_value), float(line.cgst_amount + line.sgst_amount),
+                float(line.line_total),
+            ])
+    return cols, rows, 'Bills (detailed)'
+
+
 def _gst_summary(start, end):
     cols = ['GST rate %', 'Taxable value', 'CGST', 'SGST', 'Total tax']
     buckets = {}
@@ -107,6 +132,7 @@ REPORTS = {
     'near_expiry': lambda r: _near_expiry(int(r.query_params.get('days', 90))),
     'low_stock': lambda r: _low_stock(),
     'sales': lambda r: _sales(*_parse_dates(r)),
+    'bills': lambda r: _bills(*_parse_dates(r)),
     'gst_summary': lambda r: _gst_summary(*_parse_dates(r)),
     'schedule_h1': lambda r: _schedule_h1(),
 }

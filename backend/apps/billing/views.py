@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db import transaction
+from django.db import models, transaction
 from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -43,10 +43,16 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
         with transaction.atomic():
             for line in invoice.lines.all():
-                StockMovement.objects.create(
-                    batch=line.batch, reason=StockMovement.Reason.SALE_RETURN,
-                    quantity=line.quantity, note=f'Return {invoice.number} line {line.id}',
-                )
+                if line.unit_mode == 'loose':
+                    # Restore loose units to the batch (no whole packs to add back).
+                    from apps.inventory.models import Batch
+                    Batch.objects.filter(pk=line.batch_id).update(
+                        loose_units=models.F('loose_units') + line.quantity)
+                else:
+                    StockMovement.objects.create(
+                        batch=line.batch, reason=StockMovement.Reason.SALE_RETURN,
+                        quantity=line.quantity, note=f'Return {invoice.number} line {line.id}',
+                    )
             invoice.status = Invoice.Status.RETURNED
             invoice.save(update_fields=['status'])
             if invoice.customer and invoice.payment_mode == Invoice.PaymentMode.CREDIT:

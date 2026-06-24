@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import {
   IndianRupee, Boxes, AlertTriangle, CalendarClock, PackageX, X,
+  CalendarRange, Wallet,
 } from 'lucide-react'
 import { api, inr } from '../lib/api'
 import type { Dashboard as Dash, NotificationItem } from '../lib/types'
@@ -32,9 +34,15 @@ const SEV: Record<string, string> = {
 
 export default function Dashboard() {
   const qc = useQueryClient()
+  const [start, setStart] = useState('')
+  const [end, setEnd] = useState('')
   const { data } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: async () => (await api.get<Dash>('/dashboard/')).data,
+    queryKey: ['dashboard', start, end],
+    queryFn: async () => {
+      const params: Record<string, string> = {}
+      if (start && end) { params.start = start; params.end = end }
+      return (await api.get<Dash>('/dashboard/', { params })).data
+    },
   })
   const { data: notes } = useQuery({
     queryKey: ['notifications'],
@@ -49,14 +57,46 @@ export default function Dashboard() {
     <div>
       <PageHeader title="Dashboard" subtitle="Today at a glance — Sri Sakthi Medicals" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard icon={<IndianRupee size={20} />} label="Today's sales"
           value={inr(data?.today_sales_total ?? 0)} />
+        <StatCard icon={<CalendarRange size={20} />} label="This week's sales"
+          value={inr(data?.week_sales_total ?? 0)} />
+        <StatCard icon={<IndianRupee size={20} />} label="This month's sales"
+          value={inr(data?.month_sales_total ?? 0)} />
+        <StatCard icon={<Wallet size={20} />} label="Credit outstanding"
+          value={inr(data?.credit_outstanding ?? 0)}
+          tone="bg-[#fdf3e7] text-warn" to="/customers" />
+      </div>
+
+      {/* Date-range sales filter */}
+      <div className="card p-3 mb-4 flex flex-wrap items-center gap-3">
+        <span className="text-[12.5px] font-semibold text-muted">Sales from</span>
+        <input type="date" value={start} onChange={(e) => setStart(e.target.value)}
+          className="border border-line rounded-lg px-2.5 py-1.5 text-[12.5px]" />
+        <span className="text-[12.5px] text-muted">to</span>
+        <input type="date" value={end} onChange={(e) => setEnd(e.target.value)}
+          className="border border-line rounded-lg px-2.5 py-1.5 text-[12.5px]" />
+        {start && end ? (
+          <span className="text-[13px]">
+            <b className="text-[15px]">{inr(data?.range_sales_total ?? 0)}</b>
+            <span className="text-muted"> · {data?.range_invoice_count ?? 0} bills</span>
+          </span>
+        ) : <span className="text-[12px] text-muted">Pick a range to see totals between two dates.</span>}
+        {(start || end) && (
+          <button className="btn-ghost !py-1 !px-2.5 ml-auto" onClick={() => { setStart(''); setEnd('') }}>Clear</button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={<Boxes size={20} />} label="Medicines"
           value={String(data?.medicine_count ?? 0)} to="/inventory" />
         <StatCard icon={<AlertTriangle size={20} />} label="Low stock"
           value={String(data?.low_stock_count ?? 0)}
           tone="bg-[#fdf3e7] text-warn" to="/inventory" />
+        <StatCard icon={<PackageX size={20} />} label="Out of stock"
+          value={String(data?.out_of_stock_count ?? 0)}
+          tone="bg-[#fdeceb] text-danger" to="/inventory" />
         <StatCard icon={<CalendarClock size={20} />} label="Near expiry"
           value={String(data?.near_expiry_count ?? 0)}
           tone="bg-[#fdeceb] text-danger" to="/reports" />
@@ -90,12 +130,10 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-4">
-          <StatCard icon={<PackageX size={20} />} label="Out of stock"
-            value={String(data?.out_of_stock_count ?? 0)} tone="bg-[#fdeceb] text-danger" to="/inventory" />
           <StatCard icon={<CalendarClock size={20} />} label="Expired batches"
             value={String(data?.expired_count ?? 0)} tone="bg-[#fdeceb] text-danger" />
-          <StatCard icon={<IndianRupee size={20} />} label="This month's sales"
-            value={inr(data?.month_sales_total ?? 0)} />
+          <StatCard icon={<IndianRupee size={20} />} label="Today's bills"
+            value={String(data?.today_invoice_count ?? 0)} />
           <div className="card p-4">
             <div className="text-[12px] text-muted font-medium mb-2">Quick actions</div>
             <div className="flex flex-col gap-2">

@@ -79,6 +79,8 @@ class InvoiceLine(models.Model):
     batch_number = models.CharField(max_length=60, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
 
+    # 'pack' = whole strip/bottle; 'loose' = individual units (e.g. tablets).
+    unit_mode = models.CharField(max_length=6, default='pack')
     quantity = models.PositiveIntegerField(default=1)
     mrp = models.DecimalField('MRP', max_digits=10, decimal_places=2, default=0)
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
