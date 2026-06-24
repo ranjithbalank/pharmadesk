@@ -121,6 +121,35 @@ class ExpiryValidationTests(AuthedAPITestCase):
         self.assertEqual(resp.status_code, 201)
 
 
+class DeleteDiscontinueTests(AuthedAPITestCase):
+    def test_delete_medicine_without_history(self):
+        med = make_medicine(name='Mistake')
+        resp = self.client.delete(f'/api/medicines/{med.id}/')
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(Medicine.objects.filter(id=med.id).exists())
+
+    def test_cannot_delete_medicine_with_sales(self):
+        from apps.billing.services import create_invoice
+        med = make_medicine()
+        make_batch(med, 10, mrp=100)
+        create_invoice(customer=None, payment_mode='cash', bill_discount=0,
+                       items=[{'medicine': med, 'quantity': 1}])
+        resp = self.client.delete(f'/api/medicines/{med.id}/')
+        self.assertEqual(resp.status_code, 409)
+        self.assertTrue(Medicine.objects.filter(id=med.id).exists())
+
+    def test_discontinue_and_reactivate(self):
+        med = make_medicine()
+        r1 = self.client.post(f'/api/medicines/{med.id}/discontinue/', {}, format='json')
+        self.assertEqual(r1.status_code, 200)
+        med.refresh_from_db()
+        self.assertFalse(med.is_active)
+        r2 = self.client.post(f'/api/medicines/{med.id}/discontinue/', {'reactivate': True}, format='json')
+        self.assertEqual(r2.status_code, 200)
+        med.refresh_from_db()
+        self.assertTrue(med.is_active)
+
+
 class AdjustmentReverseTests(AuthedAPITestCase):
     def test_reverse_adjustment_restores_stock(self):
         med = make_medicine()

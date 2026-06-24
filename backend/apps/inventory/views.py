@@ -25,6 +25,43 @@ class MedicineViewSet(viewsets.ModelViewSet):
             return MedicineListSerializer
         return MedicineSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        """Permanently delete a medicine — only allowed when it has no history.
+        A medicine that has been sold, ordered, or dispensed against a
+        prescription must be *discontinued* instead, so invoices, GST reports
+        and the Schedule H1 register stay intact.
+        """
+        from apps.billing.models import InvoiceLine
+        from apps.customers.models import Prescription
+        from apps.purchasing.models import PurchaseOrderLine
+
+        medicine = self.get_object()
+        blockers = []
+        if InvoiceLine.objects.filter(batch__medicine=medicine).exists():
+            blockers.append('sales')
+        if PurchaseOrderLine.objects.filter(medicine=medicine).exists():
+            blockers.append('purchase orders')
+        if Prescription.objects.filter(medicine=medicine).exists():
+            blockers.append('prescriptions')
+        if blockers:
+            return Response(
+                {'detail': 'Cannot delete — this medicine has '
+                           + ', '.join(blockers)
+                           + '. Discontinue it instead to keep the records.'},
+                status=status.HTTP_409_CONFLICT)
+        # No history: cascade removes its batches and stock movements.
+        medicine.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'])
+    def discontinue(self, request, pk=None):
+        """Soft-delete: deactivate the medicine so it leaves billing/active
+        lists but its history is preserved. Reversible via ?reactivate."""
+        medicine = self.get_object()
+        medicine.is_active = request.data.get('reactivate', False) is True
+        medicine.save(update_fields=['is_active'])
+        return Response(MedicineSerializer(medicine).data)
+
     @action(detail=False)
     def low_stock(self, request):
         """Items at or below reorder level (FR-27), for the reorder screen."""

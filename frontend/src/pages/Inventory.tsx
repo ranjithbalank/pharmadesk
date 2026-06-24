@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Layers, Pencil, Info, RotateCcw, Check } from 'lucide-react'
+import { Plus, Search, Layers, Pencil, Info, RotateCcw, Check, Ban, Trash2 } from 'lucide-react'
 import { api } from '../lib/api'
 import type { Batch, Medicine, Paginated, StockMovement, Supplier } from '../lib/types'
 import { PageHeader, StatusBadge, ScheduleBadge, Empty, Modal } from '../components/ui'
@@ -93,7 +93,10 @@ export default function Inventory() {
             {data?.results.map((m) => (
               <tr key={m.id} className="hover:bg-canvas/60">
                 <td className="px-4 py-2.5">
-                  <div className="font-semibold">{m.name}</div>
+                  <div className="font-semibold flex items-center gap-2">
+                    {m.name}
+                    {!m.is_active && <span className="text-[10px] font-bold rounded px-1.5 py-0.5 bg-canvas text-faint uppercase">Discontinued</span>}
+                  </div>
                   <div className="text-[11.5px] text-muted">
                     {m.generic_name} · {m.manufacturer}
                     {m.med_type_display && <span> · {m.med_type_display}</span>}
@@ -151,6 +154,17 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
     },
     onSuccess: onClose,
   })
+  const [actionMsg, setActionMsg] = useState('')
+  const discontinue = useMutation({
+    mutationFn: (reactivate: boolean) =>
+      api.post(`/medicines/${medicine!.id}/discontinue/`, { reactivate }),
+    onSuccess: onClose,
+  })
+  const del = useMutation({
+    mutationFn: () => api.delete(`/medicines/${medicine!.id}/`),
+    onSuccess: onClose,
+    onError: (e: any) => setActionMsg(e?.response?.data?.detail ?? 'Could not delete medicine.'),
+  })
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
   return (
@@ -198,6 +212,37 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
           </select>
         </div>
       </div>
+      {isEdit && (
+        <div className="mt-5 pt-4 border-t border-line">
+          <div className="text-[12px] font-semibold text-muted mb-2">Discontinue this medicine</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {medicine!.is_active ? (
+              <button className="btn-ghost !border-warn/40 !text-warn"
+                disabled={discontinue.isPending}
+                onClick={() => discontinue.mutate(false)}>
+                <Ban size={15} /> Discontinue (hide from billing)
+              </button>
+            ) : (
+              <button className="btn-ghost !border-ok/40 !text-ok"
+                disabled={discontinue.isPending}
+                onClick={() => discontinue.mutate(true)}>
+                <RotateCcw size={15} /> Reactivate
+              </button>
+            )}
+            <button className="btn-ghost !border-danger/40 !text-danger"
+              disabled={del.isPending}
+              onClick={() => { if (confirm('Delete this medicine permanently? This only works if it has no sales/PO/Rx history.')) del.mutate() }}>
+              <Trash2 size={15} /> Delete permanently
+            </button>
+          </div>
+          {actionMsg && <p className="text-[12px] text-danger mt-2">{actionMsg}</p>}
+          <p className="text-[11px] text-muted mt-1.5">
+            Discontinue keeps the medicine's history (invoices, reports, H1). Permanent
+            delete is only for items added by mistake with no history.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 mt-5">
         <button className="btn-ghost" onClick={onClose}>Cancel</button>
         <button className="btn-primary" disabled={!form.name || save.isPending} onClick={() => save.mutate()}>
