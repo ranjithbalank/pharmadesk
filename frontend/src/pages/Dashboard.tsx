@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import {
   IndianRupee, Boxes, AlertTriangle, CalendarClock, PackageX, X,
-  CalendarRange, Wallet,
+  CalendarRange, Wallet, Filter,
 } from 'lucide-react'
 import { api, inr } from '../lib/api'
 import type { Dashboard as Dash, NotificationItem } from '../lib/types'
@@ -36,6 +36,7 @@ export default function Dashboard() {
   const qc = useQueryClient()
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
+  const [showFilter, setShowFilter] = useState(false)
   const { data } = useQuery({
     queryKey: ['dashboard', start, end],
     queryFn: async () => {
@@ -53,9 +54,48 @@ export default function Dashboard() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
 
+  const rangeActive = !!(start && end)
+
   return (
     <div>
-      <PageHeader title="Dashboard" subtitle="Today at a glance — Sri Sakthi Medicals" />
+      <PageHeader
+        title="Dashboard"
+        subtitle="Today at a glance — Sri Sakthi Medicals"
+        actions={
+          <div className="relative">
+            <button
+              onClick={() => setShowFilter((s) => !s)}
+              className={`btn-ghost ${rangeActive ? '!border-accent !text-accent' : ''}`}
+            >
+              <Filter size={16} /> Filter sales{rangeActive ? ' · on' : ''}
+            </button>
+            {showFilter && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setShowFilter(false)} />
+                <div className="absolute right-0 top-[44px] z-40 w-[300px] card shadow-xl p-4"
+                  style={{ animation: 'pdpop .12s ease' }}>
+                  <div className="text-[12.5px] font-bold mb-3">Sales between dates</div>
+                  <label className="label">From</label>
+                  <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="input !py-2 mb-2.5" />
+                  <label className="label">To</label>
+                  <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="input !py-2" />
+                  {rangeActive && (
+                    <div className="mt-3 p-2.5 rounded-lg bg-canvas">
+                      <div className="text-[11px] text-muted">Total for range</div>
+                      <div className="font-bold text-[18px]">{inr(data?.range_sales_total ?? 0)}</div>
+                      <div className="text-[11.5px] text-muted">{data?.range_invoice_count ?? 0} bills</div>
+                    </div>
+                  )}
+                  <div className="flex justify-between mt-3">
+                    <button className="btn-ghost !py-1.5 !px-2.5" onClick={() => { setStart(''); setEnd('') }}>Clear</button>
+                    <button className="btn-primary !py-1.5 !px-3" onClick={() => setShowFilter(false)}>Done</button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard icon={<IndianRupee size={20} />} label="Today's sales"
@@ -69,24 +109,16 @@ export default function Dashboard() {
           tone="bg-[#fdf3e7] text-warn" to="/customers" />
       </div>
 
-      {/* Date-range sales filter */}
-      <div className="card p-3 mb-4 flex flex-wrap items-center gap-3">
-        <span className="text-[12.5px] font-semibold text-muted">Sales from</span>
-        <input type="date" value={start} onChange={(e) => setStart(e.target.value)}
-          className="border border-line rounded-lg px-2.5 py-1.5 text-[12.5px]" />
-        <span className="text-[12.5px] text-muted">to</span>
-        <input type="date" value={end} onChange={(e) => setEnd(e.target.value)}
-          className="border border-line rounded-lg px-2.5 py-1.5 text-[12.5px]" />
-        {start && end ? (
-          <span className="text-[13px]">
-            <b className="text-[15px]">{inr(data?.range_sales_total ?? 0)}</b>
-            <span className="text-muted"> · {data?.range_invoice_count ?? 0} bills</span>
-          </span>
-        ) : <span className="text-[12px] text-muted">Pick a range to see totals between two dates.</span>}
-        {(start || end) && (
+      {/* Compact result banner when a range is applied (filter itself lives in the header popover) */}
+      {rangeActive && (
+        <div className="card px-4 py-2.5 mb-4 flex items-center gap-2 text-[13px]">
+          <Filter size={14} className="text-accent" />
+          <span className="text-muted">Sales {start} → {end}:</span>
+          <b>{inr(data?.range_sales_total ?? 0)}</b>
+          <span className="text-muted">· {data?.range_invoice_count ?? 0} bills</span>
           <button className="btn-ghost !py-1 !px-2.5 ml-auto" onClick={() => { setStart(''); setEnd('') }}>Clear</button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={<Boxes size={20} />} label="Medicines"
