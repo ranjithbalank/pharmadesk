@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck,
-  FileSpreadsheet, FileText, UserPlus,
+  FileSpreadsheet, FileText, UserPlus, MapPin,
 } from 'lucide-react'
 import { api, inr, downloadFile } from '../lib/api'
 import type { Customer, DayClose, Invoice, Medicine, Paginated, Prescription } from '../lib/types'
@@ -227,6 +227,11 @@ export default function Billing() {
                       <div className="font-semibold text-[13.5px] truncate">{m.name}</div>
                       <div className="text-[11.5px] text-muted truncate">{m.generic_name} · {m.manufacturer}</div>
                     </div>
+                    {m.rack_location && (
+                      <span className="flex-none inline-flex items-center gap-1 bg-accent-soft text-accent font-semibold text-[12px] rounded-md px-2 py-1">
+                        <MapPin size={13} /> {m.rack_location}
+                      </span>
+                    )}
                     <ScheduleBadge schedule={m.schedule} />
                     <div className="text-right text-[12px]">
                       <div className="font-mono">{inr(m.sell_mrp ?? 0)}</div>
@@ -265,6 +270,11 @@ export default function Billing() {
                       <td className="px-4 py-2.5">
                         <div className="font-semibold flex items-center gap-2">
                           {c.medicine.name}
+                          {c.medicine.rack_location && (
+                            <span className="inline-flex items-center gap-0.5 bg-accent-soft text-accent font-semibold text-[11px] rounded px-1.5 py-0.5">
+                              <MapPin size={11} /> {c.medicine.rack_location}
+                            </span>
+                          )}
                           {c.medicine.schedule !== 'OTC' && <ScheduleBadge schedule={c.medicine.schedule} />}
                         </div>
                         <div className="text-[11.5px] text-muted flex items-center gap-2">
