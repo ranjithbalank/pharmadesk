@@ -147,6 +147,10 @@ def report_view(request, key):
     # Note: 'format' is reserved by DRF content negotiation, so use 'export'.
     fmt = request.query_params.get('export', 'json')
 
+    # Bills export is a two-sheet workbook: a per-bill summary + line items.
+    if key == 'bills' and fmt == 'xlsx':
+        return _bills_xlsx_response(*_parse_dates(request))
+
     if fmt == 'xlsx':
         return _xlsx_response(cols, rows, title)
     if fmt == 'pdf':
@@ -163,6 +167,70 @@ def _numeric_total(cols, rows):
         return round(sum(float(r[-1]) for r in rows), 2)
     except (ValueError, TypeError, IndexError):
         return None
+
+
+def _bills_xlsx_response(start, end):
+    """Two-sheet bills workbook: 'Bills' (one row per invoice) + 'Bill items'
+    (one row per item). Each bill is laid out separately so the shop can see
+    totals at a glance and the full item detail on its own sheet."""
+    from io import BytesIO
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    wb = Workbook()
+    head_fill = PatternFill('solid', fgColor='1E2640')
+
+    def style_header(ws):
+        for cell in ws[1]:
+            cell.font = Font(bold=True, color='FFFFFF')
+            cell.fill = head_fill
+        for i in range(1, ws.max_column + 1):
+            col = ws.cell(row=1, column=i)
+            ws.column_dimensions[col.column_letter].width = max(12, len(str(col.value)) + 3)
+
+    invoices = (Invoice.objects.filter(
+        created_at__date__gte=start, created_at__date__lte=end)
+        .select_related('customer').prefetch_related('lines').order_by('created_at'))
+
+    # Sheet 1 — bill summary
+    s1 = wb.active
+    s1.title = 'Bills'
+    s1.append(['Invoice', 'Date', 'Customer', 'Phone', 'Payment', 'Status',
+               'Items', 'Taxable', 'CGST', 'SGST', 'Discount', 'Total'])
+    for inv in invoices:
+        c = inv.customer
+        s1.append([
+            inv.number, inv.created_at.strftime('%Y-%m-%d %H:%M'),
+            c.name if c else 'Walk-in', c.phone if c else '',
+            inv.get_payment_mode_display(), inv.get_status_display(),
+            inv.lines.count(), float(inv.subtotal), float(inv.cgst),
+            float(inv.sgst), float(inv.discount), float(inv.total),
+        ])
+    style_header(s1)
+
+    # Sheet 2 — line items
+    s2 = wb.create_sheet('Bill items')
+    s2.append(['Invoice', 'Date', 'Item', 'Batch', 'Expiry', 'Unit', 'Qty',
+               'Rate', 'GST%', 'Taxable', 'Tax', 'Amount'])
+    for inv in invoices:
+        for line in inv.lines.all():
+            s2.append([
+                inv.number, inv.created_at.strftime('%Y-%m-%d'),
+                line.medicine_name, line.batch_number,
+                line.expiry_date.strftime('%m/%Y') if line.expiry_date else '',
+                'Loose' if line.unit_mode == 'loose' else 'Pack', line.quantity,
+                float(line.rate), float(line.gst_rate), float(line.taxable_value),
+                float(line.cgst_amount + line.sgst_amount), float(line.line_total),
+            ])
+    style_header(s2)
+
+    buf = BytesIO()
+    wb.save(buf)
+    resp = HttpResponse(
+        buf.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    resp['Content-Disposition'] = f'attachment; filename="Bills_{start}_to_{end}.xlsx"'
+    return resp
 
 
 def _xlsx_response(cols, rows, title):

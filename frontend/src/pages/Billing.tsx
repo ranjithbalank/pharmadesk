@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck } from 'lucide-react'
-import { api, inr } from '../lib/api'
+import {
+  Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck,
+  FileSpreadsheet, FileText,
+} from 'lucide-react'
+import { api, inr, downloadFile } from '../lib/api'
 import type { Customer, DayClose, Invoice, Medicine, Paginated, Prescription } from '../lib/types'
 import { PageHeader, ScheduleBadge, Empty, Modal } from '../components/ui'
 
@@ -23,6 +26,7 @@ export default function Billing() {
   const [rx, setRx] = useState<RxMap>({})
   const [saved, setSaved] = useState<Invoice | null>(null)
   const [showDayClose, setShowDayClose] = useState(false)
+  const [showBills, setShowBills] = useState(false)
   const [custQuery, setCustQuery] = useState('')
   const [custErr, setCustErr] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
@@ -162,9 +166,14 @@ export default function Billing() {
         title="Billing"
         subtitle="FEFO issues the earliest-expiring batch automatically"
         actions={
-          <button className="btn-ghost" onClick={() => setShowDayClose(true)}>
-            <CalendarCheck size={16} /> Day close · cash recon
-          </button>
+          <>
+            <button className="btn-ghost" onClick={() => setShowBills(true)}>
+              <FileSpreadsheet size={16} /> Download bills
+            </button>
+            <button className="btn-ghost" onClick={() => setShowDayClose(true)}>
+              <CalendarCheck size={16} /> Day close · cash recon
+            </button>
+          </>
         }
       />
       <div className="grid lg:grid-cols-3 gap-6">
@@ -379,7 +388,55 @@ export default function Billing() {
       </div>
 
       {showDayClose && <DayCloseModal onClose={() => setShowDayClose(false)} />}
+      {showBills && <BillsDownloadModal onClose={() => setShowBills(false)} />}
     </div>
+  )
+}
+
+function BillsDownloadModal({ onClose }: { onClose: () => void }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const monthStart = today.slice(0, 8) + '01'
+  const [start, setStart] = useState(monthStart)
+  const [end, setEnd] = useState(today)
+  const [busy, setBusy] = useState(false)
+
+  const download = async (fmt: 'xlsx' | 'pdf') => {
+    setBusy(true)
+    try {
+      const qs = new URLSearchParams({ start, end, export: fmt }).toString()
+      await downloadFile(`/reports/bills/?${qs}`, `Bills_${start}_to_${end}.${fmt}`)
+      onClose()
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <Modal title="Download bills" onClose={onClose}>
+      <p className="text-[12.5px] text-muted mb-3">
+        Excel gives two sheets — a per-bill summary and full line-item detail.
+      </p>
+      <div className="grid grid-cols-2 gap-3 mb-2">
+        <div>
+          <label className="label">From</label>
+          <input type="date" className="input !py-2" value={start} onChange={(e) => setStart(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">To</label>
+          <input type="date" className="input !py-2" value={end} onChange={(e) => setEnd(e.target.value)} />
+        </div>
+      </div>
+      <div className="flex gap-2 mb-4">
+        <button className="btn-ghost !py-1.5" onClick={() => { setStart(today); setEnd(today) }}>Today</button>
+        <button className="btn-ghost !py-1.5" onClick={() => { setStart(monthStart); setEnd(today) }}>This month</button>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button className="btn-ghost" onClick={() => download('pdf')} disabled={busy}>
+          <FileText size={15} /> PDF
+        </button>
+        <button className="btn-primary" onClick={() => download('xlsx')} disabled={busy}>
+          <FileSpreadsheet size={15} /> {busy ? 'Preparing…' : 'Download Excel'}
+        </button>
+      </div>
+    </Modal>
   )
 }
 
