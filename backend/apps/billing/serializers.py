@@ -17,7 +17,7 @@ class InvoiceLineSerializer(serializers.ModelSerializer):
         model = InvoiceLine
         fields = [
             'id', 'medicine_name', 'hsn_code', 'batch_number', 'expiry_date',
-            'quantity', 'mrp', 'rate', 'discount', 'gst_rate',
+            'unit_mode', 'quantity', 'mrp', 'rate', 'discount', 'gst_rate',
             'taxable_value', 'cgst_amount', 'sgst_amount', 'line_total',
         ]
 
@@ -39,6 +39,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
 class _CartItemSerializer(serializers.Serializer):
     medicine = serializers.PrimaryKeyRelatedField(queryset=Medicine.objects.all())
     quantity = serializers.IntegerField(min_value=1)
+    unit_mode = serializers.ChoiceField(
+        choices=['pack', 'loose'], required=False, default='pack')
     discount = serializers.DecimalField(
         max_digits=10, decimal_places=2, required=False, default=0
     )

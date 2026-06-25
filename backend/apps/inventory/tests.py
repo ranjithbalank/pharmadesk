@@ -10,6 +10,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.billing.services import allocate_fefo
+from apps.core.testbase import AuthedAPITestCase
 from apps.inventory.models import Batch, Medicine, StockMovement
 
 
@@ -92,13 +93,13 @@ class FefoTests(TestCase):
             allocate_fefo(med, 10)
 
 
-class ExpiryValidationTests(TestCase):
+class ExpiryValidationTests(AuthedAPITestCase):
     def test_expired_batch_rejected_by_api(self):
         med = make_medicine()
         resp = self.client.post('/api/batches/', data={
             'medicine': med.id, 'batch_number': 'OLD',
             'expiry_date': '2020-01-01', 'mrp': 5,
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 400)
         self.assertIn('expiry_date', resp.json())
 
@@ -107,7 +108,7 @@ class ExpiryValidationTests(TestCase):
         resp = self.client.post('/api/batches/', data={
             'medicine': med.id, 'batch_number': 'BAD',
             'mfg_date': '2027-01-01', 'expiry_date': '2026-01-01', 'mrp': 5,
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 400)
 
     def test_future_batch_accepted(self):
@@ -116,11 +117,40 @@ class ExpiryValidationTests(TestCase):
             'medicine': med.id, 'batch_number': 'GOOD',
             'expiry_date': (timezone.localdate() + timedelta(days=365)).isoformat(),
             'quantity': 50, 'mrp': 10,
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 201)
 
 
-class AdjustmentReverseTests(TestCase):
+class DeleteDiscontinueTests(AuthedAPITestCase):
+    def test_delete_medicine_without_history(self):
+        med = make_medicine(name='Mistake')
+        resp = self.client.delete(f'/api/medicines/{med.id}/')
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(Medicine.objects.filter(id=med.id).exists())
+
+    def test_cannot_delete_medicine_with_sales(self):
+        from apps.billing.services import create_invoice
+        med = make_medicine()
+        make_batch(med, 10, mrp=100)
+        create_invoice(customer=None, payment_mode='cash', bill_discount=0,
+                       items=[{'medicine': med, 'quantity': 1}])
+        resp = self.client.delete(f'/api/medicines/{med.id}/')
+        self.assertEqual(resp.status_code, 409)
+        self.assertTrue(Medicine.objects.filter(id=med.id).exists())
+
+    def test_discontinue_and_reactivate(self):
+        med = make_medicine()
+        r1 = self.client.post(f'/api/medicines/{med.id}/discontinue/', {}, format='json')
+        self.assertEqual(r1.status_code, 200)
+        med.refresh_from_db()
+        self.assertFalse(med.is_active)
+        r2 = self.client.post(f'/api/medicines/{med.id}/discontinue/', {'reactivate': True}, format='json')
+        self.assertEqual(r2.status_code, 200)
+        med.refresh_from_db()
+        self.assertTrue(med.is_active)
+
+
+class AdjustmentReverseTests(AuthedAPITestCase):
     def test_reverse_adjustment_restores_stock(self):
         med = make_medicine()
         batch = make_batch(med, 20)

@@ -63,6 +63,42 @@ class InvoiceMathTests(TestCase):
         self.assertEqual(b2.quantity, 7)   # remainder from next batch
 
 
+class LooseUnitTests(TestCase):
+    def test_loose_sale_opens_one_pack_and_keeps_remainder(self):
+        med = make_medicine(units_per_pack=10)
+        batch = make_batch(med, 5, mrp=100)  # 5 strips of 10
+        inv = create_invoice(customer=None, payment_mode='cash', bill_discount=0,
+                             items=[{'medicine': med, 'quantity': 3, 'unit_mode': 'loose'}])
+        batch.refresh_from_db()
+        self.assertEqual(batch.quantity, 4)        # one strip opened
+        self.assertEqual(batch.loose_units, 7)     # 7 tablets left from it
+        line = inv.lines.first()
+        self.assertEqual(line.unit_mode, 'loose')
+        self.assertEqual(line.quantity, 3)
+        self.assertEqual(line.rate, Decimal('10.0000'))  # 100 / 10 per tablet
+
+    def test_loose_sale_uses_existing_open_pack_first(self):
+        med = make_medicine(units_per_pack=10)
+        batch = make_batch(med, 5, mrp=100)
+        create_invoice(customer=None, payment_mode='cash', bill_discount=0,
+                       items=[{'medicine': med, 'quantity': 3, 'unit_mode': 'loose'}])
+        # 7 loose remain; selling 5 more should NOT open a new pack.
+        create_invoice(customer=None, payment_mode='cash', bill_discount=0,
+                       items=[{'medicine': med, 'quantity': 5, 'unit_mode': 'loose'}])
+        batch.refresh_from_db()
+        self.assertEqual(batch.quantity, 4)
+        self.assertEqual(batch.loose_units, 2)
+
+    def test_total_units_reflects_packs_and_loose(self):
+        med = make_medicine(units_per_pack=10)
+        make_batch(med, 5, mrp=100)
+        self.assertEqual(med.total_units, 50)
+        create_invoice(customer=None, payment_mode='cash', bill_discount=0,
+                       items=[{'medicine': med, 'quantity': 3, 'unit_mode': 'loose'}])
+        med.refresh_from_db()
+        self.assertEqual(med.total_units, 47)
+
+
 class ScheduledDrugTests(TestCase):
     def test_scheduled_drug_requires_prescription(self):
         med = make_medicine(name='Azithromycin', schedule='H1')

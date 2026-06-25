@@ -79,9 +79,23 @@ class Command(BaseCommand):
         today = timezone.localdate()
         meds = []
         for name, generic, mfr, hsn, gst, sch, pack in MEDICINES:
+            # Strip/tablet packs sell loose (10 per strip); bottles/sachets whole.
+            if 'Strip' in pack:
+                med_type, upp = 'tablet', int(pack.split('of')[-1].strip() or 10)
+            elif 'Bottle' in pack or 'Syrup' in name:
+                med_type, upp = 'syrup', 1
+            elif 'Vial' in pack:
+                med_type, upp = 'injection', 1
+            elif 'Tube' in pack:
+                med_type, upp = 'ointment', 1
+            elif 'Sachet' in pack:
+                med_type, upp = 'commercial', 1
+            else:
+                med_type, upp = 'other', 1
             med = Medicine.objects.create(
                 name=name, generic_name=generic, manufacturer=mfr, hsn_code=hsn,
                 gst_rate=gst, schedule=sch, pack_unit=pack,
+                med_type=med_type, units_per_pack=upp,
                 rack_location=f'R{random.randint(1, 8)}-{random.randint(1, 6)}',
                 reorder_level=random.choice([10, 15, 20]),
                 reorder_qty=random.choice([50, 100]),

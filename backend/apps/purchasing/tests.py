@@ -3,14 +3,14 @@
 Locks in the fix where a full receipt was wrongly left as 'partial' due to a
 stale prefetch cache.
 """
-from django.test import TestCase
-
+from apps.core.testbase import AuthedAPITestCase
 from apps.inventory.tests import make_medicine
 from apps.purchasing.models import PurchaseOrder, PurchaseOrderLine, Supplier
 
 
-class GoodsReceiptTests(TestCase):
+class GoodsReceiptTests(AuthedAPITestCase):
     def setUp(self):
+        super().setUp()
         self.supplier = Supplier.objects.create(name='MediSupply')
         self.med = make_medicine()
         self.po = PurchaseOrder.objects.create(number='PO-TEST-1', supplier=self.supplier)
@@ -25,7 +25,7 @@ class GoodsReceiptTests(TestCase):
                 'line': self.line.id, 'quantity': qty,
                 'batch_number': batch, 'expiry_date': '2027-12-31', 'mrp': 18,
             }]},
-            content_type='application/json',
+            format='json',
         )
 
     def test_full_receipt_marks_received_and_adds_stock(self):
@@ -48,13 +48,13 @@ class GoodsReceiptTests(TestCase):
         low = make_medicine(name='LowItem', reorder_level=10, reorder_qty=40)
         low.preferred_supplier = self.supplier
         low.save()
-        resp = self.client.post('/api/purchase-orders/suggest/', content_type='application/json')
+        resp = self.client.post('/api/purchase-orders/suggest/', format='json')
         self.assertEqual(resp.status_code, 200)
         suggestions = resp.json()
         self.assertTrue(any(low.id in [ln['medicine'] for ln in s['lines']] for s in suggestions))
 
 
-class PoNumberingTests(TestCase):
+class PoNumberingTests(AuthedAPITestCase):
     def test_po_uses_configurable_prefix_and_increments(self):
         from apps.core.models import ShopSetting
         s = ShopSetting.load()
@@ -64,23 +64,23 @@ class PoNumberingTests(TestCase):
         sup = Supplier.objects.create(name='X')
         med = make_medicine()
         payload = {'supplier': sup.id, 'lines': [{'medicine': med.id, 'quantity': 1, 'unit_cost': 1}]}
-        r1 = self.client.post('/api/purchase-orders/', data=payload, content_type='application/json')
-        r2 = self.client.post('/api/purchase-orders/', data=payload, content_type='application/json')
+        r1 = self.client.post('/api/purchase-orders/', data=payload, format='json')
+        r2 = self.client.post('/api/purchase-orders/', data=payload, format='json')
         self.assertEqual(r1.json()['number'], 'PURORD-00007')
         self.assertEqual(r2.json()['number'], 'PURORD-00008')
 
 
-class SupplierLicenceTests(TestCase):
+class SupplierLicenceTests(AuthedAPITestCase):
     def test_licence_number_required_when_flagged(self):
         resp = self.client.post('/api/suppliers/', data={
             'name': 'PharmaDist', 'has_drug_license': True, 'drug_license_no': '',
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 400)
         self.assertIn('drug_license_no', resp.json())
 
     def test_supplier_code_saved(self):
         resp = self.client.post('/api/suppliers/', data={
             'name': 'PharmaDist', 'code': 'SUP001',
-        }, content_type='application/json')
+        }, format='json')
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()['code'], 'SUP001')

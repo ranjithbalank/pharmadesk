@@ -10,6 +10,7 @@ const REPORTS = [
   { key: 'low_stock', label: 'Low / Out-of-Stock' },
   { key: 'near_expiry', label: 'Near-Expiry' },
   { key: 'sales', label: 'Sales', dated: true },
+  { key: 'bills', label: 'Bills (detailed)', dated: true },
   { key: 'gst_summary', label: 'GST Summary', dated: true },
   { key: 'schedule_h1', label: 'Schedule H1 Register' },
 ]

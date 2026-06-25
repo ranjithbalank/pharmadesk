@@ -1,7 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck } from 'lucide-react'
-import { api, inr } from '../lib/api'
+import {
+  Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck,
+  FileSpreadsheet, FileText, UserPlus, MapPin,
+} from 'lucide-react'
+import { api, inr, downloadFile } from '../lib/api'
 import type { Customer, DayClose, Invoice, Medicine, Paginated, Prescription } from '../lib/types'
 import { PageHeader, ScheduleBadge, Empty, Modal } from '../components/ui'
 
@@ -9,6 +12,7 @@ interface CartLine {
   medicine: Medicine
   quantity: number
   discount: number
+  unitMode: 'pack' | 'loose'
 }
 type RxMap = Record<number, Omit<Prescription, 'medicine'>>
 
@@ -22,8 +26,12 @@ export default function Billing() {
   const [rx, setRx] = useState<RxMap>({})
   const [saved, setSaved] = useState<Invoice | null>(null)
   const [showDayClose, setShowDayClose] = useState(false)
+  const [showBills, setShowBills] = useState(false)
   const [custQuery, setCustQuery] = useState('')
   const [custErr, setCustErr] = useState('')
+  const [showNewCust, setShowNewCust] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newPhone, setNewPhone] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const { data: meds } = useQuery({
@@ -47,7 +55,27 @@ export default function Billing() {
       setCustomerId(c.id)
       setCustQuery('')
     },
-    onError: () => setCustErr(`No customer found for "${custQuery.trim()}".`),
+    onError: () => {
+      // Not found — offer to save them as a new customer with this number.
+      const q = custQuery.trim()
+      setCustErr('')
+      setShowNewCust(true)
+      if (/^\d+$/.test(q)) { setNewPhone(q); setNewName('') }
+      else setNewName(q)
+    },
+  })
+
+  // Save a new customer's name + phone directly from the bill, then attach them.
+  const createCustomer = useMutation({
+    mutationFn: async () =>
+      (await api.post<Customer>('/customers/', {
+        name: newName.trim() || 'Customer', phone: newPhone.trim(), consent_given: true,
+      })).data,
+    onSuccess: async (c) => {
+      await refetchCustomers()
+      setCustomerId(c.id)
+      setShowNewCust(false); setNewName(''); setNewPhone(''); setCustQuery('')
+    },
   })
 
   const scheduledLines = cart.filter((c) => c.medicine.schedule !== 'OTC')
@@ -60,6 +88,7 @@ export default function Billing() {
         discount: billDiscount,
         items: cart.map((c) => ({
           medicine: c.medicine.id, quantity: c.quantity, discount: c.discount,
+          unit_mode: c.unitMode,
         })),
         prescriptions: scheduledLines.map((c) => ({
           medicine: c.medicine.id,
@@ -86,12 +115,22 @@ export default function Billing() {
       const existing = prev.find((c) => c.medicine.id === m.id)
       if (existing)
         return prev.map((c) => c.medicine.id === m.id ? { ...c, quantity: c.quantity + 1 } : c)
-      return [...prev, { medicine: m, quantity: 1, discount: 0 }]
+      return [...prev, { medicine: m, quantity: 1, discount: 0, unitMode: 'pack' }]
     })
   }
   const setQty = (id: number, q: number) =>
     setCart((prev) => prev.map((c) => c.medicine.id === id ? { ...c, quantity: Math.max(1, q) } : c))
+  const setMode = (id: number, mode: 'pack' | 'loose') =>
+    setCart((prev) => prev.map((c) => c.medicine.id === id ? { ...c, unitMode: mode } : c))
   const remove = (id: number) => setCart((prev) => prev.filter((c) => c.medicine.id !== id))
+  // F3 focuses the medicine search (counter shortcut).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'F3') { e.preventDefault(); searchRef.current?.focus() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const setRxField = (id: number, field: keyof Omit<Prescription, 'medicine'>, val: string) =>
     setRx((prev) => ({ ...prev, [id]: { ...(prev[id] ?? { patient_name: '', prescriber_name: '', prescriber_reg_no: '', quantity: 1 }), [field]: val } }))
 
@@ -99,10 +138,15 @@ export default function Billing() {
     (c) => rx[c.medicine.id]?.patient_name && rx[c.medicine.id]?.prescriber_name
   )
 
+  const unitRate = (c: CartLine) =>
+    c.unitMode === 'loose'
+      ? Number(c.medicine.unit_price ?? 0)
+      : Number(c.medicine.sell_mrp ?? 0)
+
   const totals = useMemo(() => {
     let gross = 0, taxable = 0, gst = 0
     for (const c of cart) {
-      const mrp = Number(c.medicine.sell_mrp ?? 0)
+      const mrp = unitRate(c)
       const rate = Number(c.medicine.gst_rate)
       const lineGross = mrp * c.quantity - c.discount
       const lineTaxable = lineGross / (1 + rate / 100)
@@ -145,9 +189,14 @@ export default function Billing() {
         title="Billing"
         subtitle="FEFO issues the earliest-expiring batch automatically"
         actions={
-          <button className="btn-ghost" onClick={() => setShowDayClose(true)}>
-            <CalendarCheck size={16} /> Day close · cash recon
-          </button>
+          <>
+            <button className="btn-ghost" onClick={() => setShowBills(true)}>
+              <FileSpreadsheet size={16} /> Download bills
+            </button>
+            <button className="btn-ghost" onClick={() => setShowDayClose(true)}>
+              <CalendarCheck size={16} /> Day close · cash recon
+            </button>
+          </>
         }
       />
       <div className="grid lg:grid-cols-3 gap-6">
@@ -178,6 +227,11 @@ export default function Billing() {
                       <div className="font-semibold text-[13.5px] truncate">{m.name}</div>
                       <div className="text-[11.5px] text-muted truncate">{m.generic_name} · {m.manufacturer}</div>
                     </div>
+                    {m.rack_location && (
+                      <span className="flex-none inline-flex items-center gap-1 bg-accent-soft text-accent font-semibold text-[12px] rounded-md px-2 py-1">
+                        <MapPin size={13} /> {m.rack_location}
+                      </span>
+                    )}
                     <ScheduleBadge schedule={m.schedule} />
                     <div className="text-right text-[12px]">
                       <div className="font-mono">{inr(m.sell_mrp ?? 0)}</div>
@@ -208,24 +262,44 @@ export default function Billing() {
                   <tr><td colSpan={6}><Empty>Cart is empty — search to add medicines.</Empty></td></tr>
                 )}
                 {cart.map((c) => {
-                  const mrp = Number(c.medicine.sell_mrp ?? 0)
-                  const amount = mrp * c.quantity - c.discount
+                  const rate = unitRate(c)
+                  const amount = rate * c.quantity - c.discount
+                  const loose = c.unitMode === 'loose'
                   return (
                     <tr key={c.medicine.id}>
                       <td className="px-4 py-2.5">
                         <div className="font-semibold flex items-center gap-2">
                           {c.medicine.name}
+                          {c.medicine.rack_location && (
+                            <span className="inline-flex items-center gap-0.5 bg-accent-soft text-accent font-semibold text-[11px] rounded px-1.5 py-0.5">
+                              <MapPin size={11} /> {c.medicine.rack_location}
+                            </span>
+                          )}
                           {c.medicine.schedule !== 'OTC' && <ScheduleBadge schedule={c.medicine.schedule} />}
                         </div>
-                        <div className="text-[11.5px] text-muted">
-                          {c.medicine.pack_unit} · GST {c.medicine.gst_rate}%
+                        <div className="text-[11.5px] text-muted flex items-center gap-2">
+                          <span>{c.medicine.pack_unit} · GST {c.medicine.gst_rate}%</span>
+                          {c.medicine.sells_loose && (
+                            <span className="inline-flex rounded-md overflow-hidden border border-line">
+                              {(['pack', 'loose'] as const).map((m) => (
+                                <button key={m} onClick={() => setMode(c.medicine.id, m)}
+                                  className={`px-1.5 py-0.5 text-[10px] font-semibold capitalize ${
+                                    c.unitMode === m ? 'bg-accent text-white' : 'text-muted'}`}>
+                                  {m === 'loose' ? `loose (×${c.medicine.units_per_pack})` : 'pack'}
+                                </button>
+                              ))}
+                            </span>
+                          )}
                         </div>
                       </td>
-                      <td className="text-right px-2 font-mono">{mrp.toFixed(2)}</td>
+                      <td className="text-right px-2 font-mono">
+                        {rate.toFixed(2)}{loose && <span className="text-[10px] text-muted">/unit</span>}
+                      </td>
                       <td className="text-center px-2">
                         <input type="number" min={1} value={c.quantity}
                           onChange={(e) => setQty(c.medicine.id, Number(e.target.value))}
                           className="w-14 text-center border border-line rounded-md py-1" />
+                        {loose && <div className="text-[9px] text-muted">tablets</div>}
                       </td>
                       <td className="px-2">
                         <input type="number" min={0} value={c.discount}
@@ -289,8 +363,32 @@ export default function Billing() {
                   className="input !py-2 text-[13px]" />
                 <button className="btn-ghost !py-2" disabled={!custQuery || lookupCustomer.isPending}
                   onClick={() => lookupCustomer.mutate()}>Fetch</button>
+                <button className="btn-ghost !py-2" title="Save a new customer"
+                  onClick={() => { setShowNewCust((s) => !s); setCustErr('') }}>
+                  <UserPlus size={15} />
+                </button>
               </div>
               {custErr && <p className="text-[11.5px] text-danger mb-1">{custErr}</p>}
+
+              {showNewCust && (
+                <div className="card p-2.5 mb-1.5 bg-canvas/60 space-y-1.5">
+                  <div className="text-[11.5px] font-semibold text-muted">Save new customer</div>
+                  <input value={newName} onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Name" className="input !py-1.5 text-[13px]" />
+                  <input value={newPhone} inputMode="numeric" maxLength={15}
+                    onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Phone number" className="input !py-1.5 text-[13px]" />
+                  <div className="flex gap-1.5">
+                    <button className="btn-primary !py-1.5 flex-1 justify-center"
+                      disabled={!newPhone || createCustomer.isPending}
+                      onClick={() => createCustomer.mutate()}>
+                      {createCustomer.isPending ? 'Saving…' : 'Save & use'}
+                    </button>
+                    <button className="btn-ghost !py-1.5" onClick={() => setShowNewCust(false)}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
               <select className="input" value={customerId}
                 onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : '')}>
                 <option value="">Walk-in customer</option>
@@ -347,7 +445,55 @@ export default function Billing() {
       </div>
 
       {showDayClose && <DayCloseModal onClose={() => setShowDayClose(false)} />}
+      {showBills && <BillsDownloadModal onClose={() => setShowBills(false)} />}
     </div>
+  )
+}
+
+function BillsDownloadModal({ onClose }: { onClose: () => void }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const monthStart = today.slice(0, 8) + '01'
+  const [start, setStart] = useState(monthStart)
+  const [end, setEnd] = useState(today)
+  const [busy, setBusy] = useState(false)
+
+  const download = async (fmt: 'xlsx' | 'pdf') => {
+    setBusy(true)
+    try {
+      const qs = new URLSearchParams({ start, end, export: fmt }).toString()
+      await downloadFile(`/reports/bills/?${qs}`, `Bills_${start}_to_${end}.${fmt}`)
+      onClose()
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <Modal title="Download bills" onClose={onClose}>
+      <p className="text-[12.5px] text-muted mb-3">
+        Excel gives two sheets — a per-bill summary and full line-item detail.
+      </p>
+      <div className="grid grid-cols-2 gap-3 mb-2">
+        <div>
+          <label className="label">From</label>
+          <input type="date" className="input !py-2" value={start} onChange={(e) => setStart(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">To</label>
+          <input type="date" className="input !py-2" value={end} onChange={(e) => setEnd(e.target.value)} />
+        </div>
+      </div>
+      <div className="flex gap-2 mb-4">
+        <button className="btn-ghost !py-1.5" onClick={() => { setStart(today); setEnd(today) }}>Today</button>
+        <button className="btn-ghost !py-1.5" onClick={() => { setStart(monthStart); setEnd(today) }}>This month</button>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button className="btn-ghost" onClick={() => download('pdf')} disabled={busy}>
+          <FileText size={15} /> PDF
+        </button>
+        <button className="btn-primary" onClick={() => download('xlsx')} disabled={busy}>
+          <FileSpreadsheet size={15} /> {busy ? 'Preparing…' : 'Download Excel'}
+        </button>
+      </div>
+    </Modal>
   )
 }
 

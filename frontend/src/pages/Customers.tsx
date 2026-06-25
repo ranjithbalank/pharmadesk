@@ -90,7 +90,9 @@ function AddCustomer({ onClose }: { onClose: () => void }) {
         </div>
         <div>
           <label className="label">Phone</label>
-          <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <input className="input" value={form.phone} inputMode="numeric" maxLength={15}
+            placeholder="10-digit mobile number"
+            onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '') })} />
         </div>
         <div>
           <label className="label">Address</label>

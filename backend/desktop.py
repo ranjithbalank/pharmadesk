@@ -33,6 +33,7 @@ URL = f'http://{HOST}:{PORT}/'
 def prepare():
     """First-run/every-run setup: schema up to date, static present, safety backup."""
     call_command('migrate', interactive=False, verbosity=0)
+    call_command('ensure_login')  # SEC-1: create the shared login on first run
     try:
         call_command('collectstatic', interactive=False, verbosity=0)
     except Exception as exc:  # non-fatal — UI may still be served from dist/

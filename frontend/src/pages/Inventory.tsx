@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Layers, Pencil, Info, RotateCcw } from 'lucide-react'
-import { api, inr } from '../lib/api'
-import type { Medicine, Paginated, StockMovement, Supplier } from '../lib/types'
+import { Plus, Search, Layers, Pencil, Info, RotateCcw, Check, Ban, Trash2 } from 'lucide-react'
+import { api } from '../lib/api'
+import type { Batch, Medicine, Paginated, StockMovement, Supplier } from '../lib/types'
 import { PageHeader, StatusBadge, ScheduleBadge, Empty, Modal } from '../components/ui'
 
 const SCHEDULES = ['OTC', 'H', 'H1', 'X']
+
+const MED_TYPES: [string, string][] = [
+  ['tablet', 'Tablet / capsule'], ['syrup', 'Syrup / liquid'], ['injection', 'Injection'],
+  ['drops', 'Drops'], ['ointment', 'Ointment / cream'], ['commercial', 'Commercial product'],
+  ['other', 'Other'],
+]
 
 const SCHEDULE_HELP: { code: string; title: string; desc: string }[] = [
   { code: 'OTC', title: 'Over the counter', desc: 'No prescription required.' },
@@ -87,8 +93,15 @@ export default function Inventory() {
             {data?.results.map((m) => (
               <tr key={m.id} className="hover:bg-canvas/60">
                 <td className="px-4 py-2.5">
-                  <div className="font-semibold">{m.name}</div>
-                  <div className="text-[11.5px] text-muted">{m.generic_name} · {m.manufacturer}</div>
+                  <div className="font-semibold flex items-center gap-2">
+                    {m.name}
+                    {!m.is_active && <span className="text-[10px] font-bold rounded px-1.5 py-0.5 bg-canvas text-faint uppercase">Discontinued</span>}
+                  </div>
+                  <div className="text-[11.5px] text-muted">
+                    {m.generic_name} · {m.manufacturer}
+                    {m.med_type_display && <span> · {m.med_type_display}</span>}
+                    {m.sells_loose && <span className="text-accent"> · {m.units_per_pack}/pack</span>}
+                  </div>
                 </td>
                 <td className="px-2"><ScheduleBadge schedule={m.schedule} /></td>
                 <td className="px-2 text-muted font-mono text-[12px]">{m.rack_location || '—'}</td>
@@ -119,9 +132,11 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
   const isEdit = !!medicine
   const [form, setForm] = useState({
     name: medicine?.name ?? '', generic_name: medicine?.generic_name ?? '',
-    manufacturer: medicine?.manufacturer ?? '', hsn_code: medicine?.hsn_code ?? '',
+    manufacturer: medicine?.manufacturer ?? '', med_type: medicine?.med_type ?? 'tablet',
+    hsn_code: medicine?.hsn_code ?? '',
     gst_rate: String(medicine?.gst_rate ?? '12'), schedule: medicine?.schedule ?? 'OTC',
-    pack_unit: medicine?.pack_unit ?? '', rack_location: medicine?.rack_location ?? '',
+    pack_unit: medicine?.pack_unit ?? '', units_per_pack: String(medicine?.units_per_pack ?? '1'),
+    rack_location: medicine?.rack_location ?? '',
     barcode: medicine?.barcode ?? '', reorder_level: String(medicine?.reorder_level ?? '10'),
     reorder_qty: String(medicine?.reorder_qty ?? '50'),
     preferred_supplier: medicine?.preferred_supplier ? String(medicine.preferred_supplier) : '',
@@ -139,6 +154,17 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
     },
     onSuccess: onClose,
   })
+  const [actionMsg, setActionMsg] = useState('')
+  const discontinue = useMutation({
+    mutationFn: (reactivate: boolean) =>
+      api.post(`/medicines/${medicine!.id}/discontinue/`, { reactivate }),
+    onSuccess: onClose,
+  })
+  const del = useMutation({
+    mutationFn: () => api.delete(`/medicines/${medicine!.id}/`),
+    onSuccess: onClose,
+    onError: (e: any) => setActionMsg(e?.response?.data?.detail ?? 'Could not delete medicine.'),
+  })
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
   return (
@@ -147,6 +173,12 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
         <Field label="Name *" v={form.name} on={(v) => set('name', v)} className="col-span-2" />
         <Field label="Generic / composition" v={form.generic_name} on={(v) => set('generic_name', v)} />
         <Field label="Manufacturer" v={form.manufacturer} on={(v) => set('manufacturer', v)} />
+        <div>
+          <label className="label">Type</label>
+          <select className="input" value={form.med_type} onChange={(e) => set('med_type', e.target.value)}>
+            {MED_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
         <Field label="HSN code" v={form.hsn_code} on={(v) => set('hsn_code', v)} />
         <div>
           <label className="label">GST rate %</label>
@@ -161,6 +193,12 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
           </select>
         </div>
         <Field label="Pack / unit" v={form.pack_unit} on={(v) => set('pack_unit', v)} />
+        <div>
+          <label className="label">Units per pack</label>
+          <input type="number" min={1} value={form.units_per_pack}
+            onChange={(e) => set('units_per_pack', e.target.value)} className="input" />
+          <p className="text-[10.5px] text-muted mt-0.5">e.g. 10 tablets/strip — enables loose sale. Use 1 for syrups.</p>
+        </div>
         <Field label="Rack location" v={form.rack_location} on={(v) => set('rack_location', v)} />
         <Field label="Barcode" v={form.barcode} on={(v) => set('barcode', v)} />
         <Field label="Reorder level" v={form.reorder_level} on={(v) => set('reorder_level', v)} type="number" />
@@ -174,6 +212,37 @@ function MedicineModal({ medicine, onClose }: { medicine: Medicine | null; onClo
           </select>
         </div>
       </div>
+      {isEdit && (
+        <div className="mt-5 pt-4 border-t border-line">
+          <div className="text-[12px] font-semibold text-muted mb-2">Discontinue this medicine</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {medicine!.is_active ? (
+              <button className="btn-ghost !border-warn/40 !text-warn"
+                disabled={discontinue.isPending}
+                onClick={() => discontinue.mutate(false)}>
+                <Ban size={15} /> Discontinue (hide from billing)
+              </button>
+            ) : (
+              <button className="btn-ghost !border-ok/40 !text-ok"
+                disabled={discontinue.isPending}
+                onClick={() => discontinue.mutate(true)}>
+                <RotateCcw size={15} /> Reactivate
+              </button>
+            )}
+            <button className="btn-ghost !border-danger/40 !text-danger"
+              disabled={del.isPending}
+              onClick={() => { if (confirm('Delete this medicine permanently? This only works if it has no sales/PO/Rx history.')) del.mutate() }}>
+              <Trash2 size={15} /> Delete permanently
+            </button>
+          </div>
+          {actionMsg && <p className="text-[12px] text-danger mt-2">{actionMsg}</p>}
+          <p className="text-[11px] text-muted mt-1.5">
+            Discontinue keeps the medicine's history (invoices, reports, H1). Permanent
+            delete is only for items added by mistake with no history.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 mt-5">
         <button className="btn-ghost" onClick={onClose}>Cancel</button>
         <button className="btn-primary" disabled={!form.name || save.isPending} onClick={() => save.mutate()}>
@@ -225,26 +294,21 @@ function BatchModal({ medicine, onClose }: { medicine: Medicine; onClose: () => 
                   <th className="text-left px-3 py-2">Batch</th>
                   <th className="text-left px-2">Expiry</th>
                   <th className="text-right px-2">Qty</th>
-                  <th className="text-right px-2">MRP</th>
-                  <th className="text-right px-3">Days left</th>
+                  <th className="text-right px-2">Cost</th>
+                  <th className="text-right px-2">MRP / price</th>
+                  <th className="text-right px-3">Days</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {!data?.batches?.length && <tr><td colSpan={5}><Empty>No batches yet.</Empty></td></tr>}
+                {!data?.batches?.length && <tr><td colSpan={7}><Empty>No batches yet.</Empty></td></tr>}
                 {data?.batches?.map((b) => (
-                  <tr key={b.id} className={b.days_to_expiry <= 90 ? 'bg-[#fdf3e7]/40' : ''}>
-                    <td className="px-3 py-2 font-mono">{b.batch_number}</td>
-                    <td className="px-2">{b.expiry_date}</td>
-                    <td className="px-2 text-right">{b.quantity}</td>
-                    <td className="px-2 text-right">{inr(b.mrp)}</td>
-                    <td className={`px-3 text-right font-semibold ${b.days_to_expiry <= 90 ? 'text-warn' : 'text-muted'}`}>
-                      {b.days_to_expiry}
-                    </td>
-                  </tr>
+                  <BatchPriceRow key={b.id} batch={b} onSaved={refresh} />
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="text-[11.5px] text-muted mb-3">Edit a batch's <b>Cost</b> or <b>MRP/price</b> above and click ✓ to save. Billing uses the MRP of the earliest-expiring batch.</p>
 
           <div className="text-[12px] font-semibold text-muted mb-2">Add / receive batch</div>
           <div className="grid grid-cols-3 gap-3">
@@ -350,6 +414,42 @@ function AdjustTab({ medicine, batches, onChange }: { medicine: Medicine; batche
         </table>
       </div>
     </div>
+  )
+}
+
+function BatchPriceRow({ batch, onSaved }: { batch: Batch; onSaved: () => void }) {
+  const [cost, setCost] = useState(String(batch.purchase_cost))
+  const [mrp, setMrp] = useState(String(batch.mrp))
+  const dirty = cost !== String(batch.purchase_cost) || mrp !== String(batch.mrp)
+  const save = useMutation({
+    mutationFn: () => api.patch(`/batches/${batch.id}/`, { purchase_cost: cost, mrp }),
+    onSuccess: onSaved,
+  })
+  return (
+    <tr className={batch.days_to_expiry <= 90 ? 'bg-[#fdf3e7]/40' : ''}>
+      <td className="px-3 py-2 font-mono">{batch.batch_number}</td>
+      <td className="px-2">{batch.expiry_date}</td>
+      <td className="px-2 text-right">{batch.quantity}</td>
+      <td className="px-2 text-right">
+        <input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)}
+          className="w-20 text-right border border-line rounded-md py-1 px-1.5" />
+      </td>
+      <td className="px-2 text-right">
+        <input type="number" min={0} value={mrp} onChange={(e) => setMrp(e.target.value)}
+          className="w-20 text-right border border-line rounded-md py-1 px-1.5 font-semibold" />
+      </td>
+      <td className={`px-3 text-right font-semibold ${batch.days_to_expiry <= 90 ? 'text-warn' : 'text-muted'}`}>
+        {batch.days_to_expiry}
+      </td>
+      <td className="px-2 text-right">
+        {dirty && (
+          <button onClick={() => save.mutate()} disabled={save.isPending}
+            className="text-ok hover:bg-[#eaf6ee] rounded p-1" title="Save price">
+            <Check size={16} />
+          </button>
+        )}
+      </td>
+    </tr>
   )
 }
 

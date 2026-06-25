@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Third-party
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'django_filters',
     # Local apps
@@ -171,7 +172,20 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
+    # SEC-1: the API requires a logged-in user (single shared login). Token auth
+    # for the SPA, session auth for the browsable API / tests.
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
+
+# Default shared login created on setup (change the password after go-live).
+DEFAULT_LOGIN_USERNAME = os.environ.get('PHARMADESK_USER', 'admin')
+DEFAULT_LOGIN_PASSWORD = os.environ.get('PHARMADESK_PASSWORD', 'pharmadesk')
 
 # CORS — the React dev server (Vite) runs on 5173; the packaged app serves
 # from localhost. Offline-first means everything stays on this machine.

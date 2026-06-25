@@ -1,9 +1,12 @@
 from datetime import timedelta
 
+from django.contrib.auth import authenticate
 from django.db.models import Count, Sum
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import status, viewsets
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,6 +20,55 @@ from .serializers import (
     ShopSettingSerializer,
 )
 from .services import recompute_notifications
+
+
+class LoginView(APIView):
+    """SEC-1 single shared login. Exchanges username + password for a token."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        username = (request.data.get('username') or '').strip()
+        password = request.data.get('password') or ''
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({'detail': 'Incorrect username or password.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        token, _ = Token.objects.get_or_create(user=user)
+        AuditLog.objects.create(action='login', actor=user.username)
+        return Response({'token': token.key, 'username': user.username,
+                         'shop_name': ShopSetting.load().shop_name})
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        Token.objects.filter(user=request.user).delete()
+        return Response({'status': 'ok'})
+
+
+class MeView(APIView):
+    """Returns the logged-in user — the SPA uses it to validate a saved token."""
+    def get(self, request):
+        return Response({'username': request.user.username,
+                         'shop_name': ShopSetting.load().shop_name})
+
+
+class ChangePasswordView(APIView):
+    def post(self, request):
+        current = request.data.get('current_password') or ''
+        new = request.data.get('new_password') or ''
+        if not request.user.check_password(current):
+            return Response({'detail': 'Current password is incorrect.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if len(new) < 4:
+            return Response({'detail': 'New password is too short.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        request.user.set_password(new)
+        request.user.save()
+        Token.objects.filter(user=request.user).delete()
+        token = Token.objects.create(user=request.user)
+        AuditLog.objects.create(action='password_change', actor=request.user.username)
+        return Response({'token': token.key})
 
 
 class ShopSettingView(APIView):
@@ -72,8 +124,10 @@ class DashboardView(APIView):
         recompute_notifications()
         today = timezone.localdate()
         month_start = today.replace(day=1)
+        week_start = today - timedelta(days=6)  # last 7 days inclusive
 
-        todays_invoices = Invoice.objects.filter(created_at__date=today)
+        non_returned = Invoice.objects.exclude(status=Invoice.Status.RETURNED)
+        todays_invoices = non_returned.filter(created_at__date=today)
         meds = Medicine.objects.filter(is_active=True)
         low = sum(1 for m in meds if m.stock_status == 'low_stock')
         oos = sum(1 for m in meds if m.stock_status == 'out_of_stock')
@@ -83,12 +137,29 @@ class DashboardView(APIView):
         ).count()
         expired = Batch.objects.filter(quantity__gt=0, expiry_date__lt=today).count()
 
+        # Total outstanding credit/khata across all customers.
+        from apps.customers.models import Customer
+        credit_outstanding = Customer.objects.aggregate(
+            s=Sum('credit_balance'))['s'] or 0
+
+        # Optional custom date range (?start=YYYY-MM-DD&end=YYYY-MM-DD).
+        range_total = range_count = None
+        start, end = request.query_params.get('start'), request.query_params.get('end')
+        if start and end:
+            ranged = non_returned.filter(created_at__date__gte=start, created_at__date__lte=end)
+            range_total = ranged.aggregate(s=Sum('total'))['s'] or 0
+            range_count = ranged.count()
+
         return Response({
             'today_sales_total': todays_invoices.aggregate(s=Sum('total'))['s'] or 0,
             'today_invoice_count': todays_invoices.count(),
-            'month_sales_total': Invoice.objects.filter(
-                created_at__date__gte=month_start
-            ).aggregate(s=Sum('total'))['s'] or 0,
+            'week_sales_total': non_returned.filter(
+                created_at__date__gte=week_start).aggregate(s=Sum('total'))['s'] or 0,
+            'month_sales_total': non_returned.filter(
+                created_at__date__gte=month_start).aggregate(s=Sum('total'))['s'] or 0,
+            'credit_outstanding': credit_outstanding,
+            'range_sales_total': range_total,
+            'range_invoice_count': range_count,
             'medicine_count': meds.count(),
             'low_stock_count': low,
             'out_of_stock_count': oos,
