@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck,
-  FileSpreadsheet, FileText,
+  FileSpreadsheet, FileText, UserPlus,
 } from 'lucide-react'
 import { api, inr, downloadFile } from '../lib/api'
 import type { Customer, DayClose, Invoice, Medicine, Paginated, Prescription } from '../lib/types'
@@ -29,6 +29,9 @@ export default function Billing() {
   const [showBills, setShowBills] = useState(false)
   const [custQuery, setCustQuery] = useState('')
   const [custErr, setCustErr] = useState('')
+  const [showNewCust, setShowNewCust] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newPhone, setNewPhone] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const { data: meds } = useQuery({
@@ -52,7 +55,27 @@ export default function Billing() {
       setCustomerId(c.id)
       setCustQuery('')
     },
-    onError: () => setCustErr(`No customer found for "${custQuery.trim()}".`),
+    onError: () => {
+      // Not found — offer to save them as a new customer with this number.
+      const q = custQuery.trim()
+      setCustErr('')
+      setShowNewCust(true)
+      if (/^\d+$/.test(q)) { setNewPhone(q); setNewName('') }
+      else setNewName(q)
+    },
+  })
+
+  // Save a new customer's name + phone directly from the bill, then attach them.
+  const createCustomer = useMutation({
+    mutationFn: async () =>
+      (await api.post<Customer>('/customers/', {
+        name: newName.trim() || 'Customer', phone: newPhone.trim(), consent_given: true,
+      })).data,
+    onSuccess: async (c) => {
+      await refetchCustomers()
+      setCustomerId(c.id)
+      setShowNewCust(false); setNewName(''); setNewPhone(''); setCustQuery('')
+    },
   })
 
   const scheduledLines = cart.filter((c) => c.medicine.schedule !== 'OTC')
@@ -330,8 +353,32 @@ export default function Billing() {
                   className="input !py-2 text-[13px]" />
                 <button className="btn-ghost !py-2" disabled={!custQuery || lookupCustomer.isPending}
                   onClick={() => lookupCustomer.mutate()}>Fetch</button>
+                <button className="btn-ghost !py-2" title="Save a new customer"
+                  onClick={() => { setShowNewCust((s) => !s); setCustErr('') }}>
+                  <UserPlus size={15} />
+                </button>
               </div>
               {custErr && <p className="text-[11.5px] text-danger mb-1">{custErr}</p>}
+
+              {showNewCust && (
+                <div className="card p-2.5 mb-1.5 bg-canvas/60 space-y-1.5">
+                  <div className="text-[11.5px] font-semibold text-muted">Save new customer</div>
+                  <input value={newName} onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Name" className="input !py-1.5 text-[13px]" />
+                  <input value={newPhone} inputMode="numeric" maxLength={15}
+                    onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Phone number" className="input !py-1.5 text-[13px]" />
+                  <div className="flex gap-1.5">
+                    <button className="btn-primary !py-1.5 flex-1 justify-center"
+                      disabled={!newPhone || createCustomer.isPending}
+                      onClick={() => createCustomer.mutate()}>
+                      {createCustomer.isPending ? 'Saving…' : 'Save & use'}
+                    </button>
+                    <button className="btn-ghost !py-1.5" onClick={() => setShowNewCust(false)}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
               <select className="input" value={customerId}
                 onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : '')}>
                 <option value="">Walk-in customer</option>
