@@ -262,11 +262,24 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
         </table>
       ) : (
         <div className="space-y-3">
-          <p className="text-[12px] text-muted">Enter received batches. Stock updates automatically on receipt.</p>
-          {current.lines.filter((l) => (l.outstanding_qty ?? (l.quantity - (l.received_qty ?? 0))) > 0).map((l) => (
+          <div className="text-[12px] text-muted bg-accent-soft/50 border border-accent/20 rounded-lg px-3 py-2">
+            <b>Partial delivery is fine.</b> Enter only the quantity that actually arrived for each item.
+            Leave an item blank to receive it later — the order stays <b>Partially received</b> until everything arrives.
+          </div>
+          {current.lines.filter((l) => (l.outstanding_qty ?? (l.quantity - (l.received_qty ?? 0))) > 0).map((l) => {
+            const pending = l.outstanding_qty ?? (l.quantity - (l.received_qty ?? 0))
+            const entered = Number(rows[l.id!]?.quantity ?? 0)
+            return (
             <div key={l.id} className="card p-3">
-              <div className="font-semibold text-[13px] mb-2">{l.medicine_name}
-                <span className="text-muted font-normal"> · {l.outstanding_qty ?? (l.quantity - (l.received_qty ?? 0))} pending</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-semibold text-[13px]">{l.medicine_name}
+                  <span className="text-muted font-normal"> · ordered {l.quantity}, received {l.received_qty ?? 0},
+                    <b className="text-warn"> {pending} pending</b></span>
+                </div>
+                <button className="btn-ghost !py-1 !px-2 text-[11px]"
+                  onClick={() => setRow(l.id!, 'quantity', String(pending))}>
+                  Receive all {pending}
+                </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                 <div>
@@ -282,8 +295,11 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
                   <input type="date" className="input !py-2" value={rows[l.id!]?.expiry_date ?? ''} onChange={(e) => setRow(l.id!, 'expiry_date', e.target.value)} />
                 </div>
                 <div>
-                  <label className="label !mb-0.5">Qty *</label>
-                  <input type="number" placeholder="0" className="input !py-2" value={rows[l.id!]?.quantity ?? ''} onChange={(e) => setRow(l.id!, 'quantity', e.target.value)} />
+                  <label className="label !mb-0.5">Qty received *</label>
+                  <input type="number" min={0} placeholder={`of ${pending}`}
+                    className={`input !py-2 ${entered > pending ? '!border-warn' : ''}`}
+                    value={rows[l.id!]?.quantity ?? ''} onChange={(e) => setRow(l.id!, 'quantity', e.target.value)} />
+                  {entered > pending && <p className="text-[10px] text-warn mt-0.5">More than {pending} pending</p>}
                 </div>
                 <div>
                   <label className="label !mb-0.5">Cost / unit</label>
@@ -295,7 +311,7 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
                 </div>
               </div>
             </div>
-          ))}
+          )})}
           <div className="flex justify-end gap-2">
             <button className="btn-ghost" onClick={() => setReceiving(false)}>Cancel</button>
             <button className="btn-primary" disabled={!receiptValid || receive.isPending} onClick={() => receive.mutate()}>
