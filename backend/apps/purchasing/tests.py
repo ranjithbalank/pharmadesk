@@ -44,6 +44,17 @@ class GoodsReceiptTests(AuthedAPITestCase):
         self.assertEqual(self.po.status, PurchaseOrder.Status.PARTIAL)
         self.assertEqual(self.line.outstanding_qty, 8)
 
+    def test_close_short_supply_finalises_partial_po(self):
+        self._receive(12)  # 12 of 20 received -> partial
+        resp = self.client.post(f'/api/purchase-orders/{self.po.id}/close/', {}, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.po.refresh_from_db()
+        self.assertEqual(self.po.status, PurchaseOrder.Status.RECEIVED)
+        self.assertIn('short supply', self.po.notes.lower())
+        # Stock reflects only what actually arrived (12), not the ordered 20.
+        self.med.refresh_from_db()
+        self.assertEqual(self.med.total_stock, 12)
+
     def test_suggest_reorder_groups_low_items(self):
         low = make_medicine(name='LowItem', reorder_level=10, reorder_qty=40)
         low.preferred_supplier = self.supplier

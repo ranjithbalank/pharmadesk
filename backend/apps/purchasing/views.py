@@ -87,6 +87,23 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(po).data)
 
     @action(detail=True, methods=['post'])
+    def close(self, request, pk=None):
+        """FR-13: close a partially-received PO when the rest won't be supplied
+        (short supply). Finalises the order; whatever was received stays in
+        stock and the unfulfilled quantity is simply not delivered.
+        """
+        po = self.get_object()
+        if po.status not in (PurchaseOrder.Status.PLACED, PurchaseOrder.Status.PARTIAL):
+            return Response({'detail': 'Only a placed or partially-received order can be closed.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        short = sum(line.outstanding_qty for line in po.lines.all())
+        note = (request.data.get('note') or '').strip() or f'Closed — short supply ({short} units undelivered)'
+        po.notes = (po.notes + '\n' if po.notes else '') + note
+        po.status = PurchaseOrder.Status.RECEIVED
+        po.save(update_fields=['notes', 'status'])
+        return Response(self.get_serializer(po).data)
+
+    @action(detail=True, methods=['post'])
     def receive(self, request, pk=None):
         """FR-12: goods receipt against a PO. Body: list of received lines with
         batch number, expiry, cost, qty — each creates a Batch + stock-in.

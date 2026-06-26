@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, Plus, Send, PackageCheck, FileText } from 'lucide-react'
+import { Sparkles, Plus, Send, PackageCheck, FileText, XCircle } from 'lucide-react'
 import { api, inr } from '../lib/api'
 import { PageHeader, Empty, Modal } from '../components/ui'
 
@@ -165,6 +165,10 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
     }),
     onSuccess: () => { setEdits({}); qc.invalidateQueries({ queryKey: ['purchase-orders'] }); qc.invalidateQueries({ queryKey: ['purchase-order', po.id] }) },
   })
+  const close = useMutation({
+    mutationFn: () => api.post(`/purchase-orders/${po.id}/close/`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchase-orders'] }); qc.invalidateQueries({ queryKey: ['purchase-order', po.id] }) },
+  })
   const receive = useMutation({
     mutationFn: () => api.post(`/purchase-orders/${po.id}/receive/`, {
       lines: current.lines
@@ -219,6 +223,12 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
           {canReceive && !receiving && (
             <button className="btn-primary !py-1.5" onClick={() => setReceiving(true)}>
               <PackageCheck size={14} /> Receive goods
+            </button>
+          )}
+          {canReceive && !receiving && (
+            <button className="btn-ghost !py-1.5 !text-warn !border-warn/40" disabled={close.isPending}
+              onClick={() => { if (confirm('Close this order? Any undelivered quantity will be treated as short-supplied and the order marked done.')) close.mutate() }}>
+              <XCircle size={14} /> Close (short supply)
             </button>
           )}
         </div>
