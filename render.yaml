@@ -11,8 +11,7 @@ services:
     rootDir: backend
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "gunicorn config.wsgi:application"
-    healthCheckPath: /api/
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.7"
