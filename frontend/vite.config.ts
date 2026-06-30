@@ -5,9 +5,10 @@ import react from '@vitejs/plugin-react'
 // the offline-first app talks to one origin in dev as it will once packaged.
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  // Production build is served by Django/WhiteNoise under /static/; the dev
-  // server stays at root so http://localhost:5173/ works as before.
-  base: command === 'build' ? '/static/' : '/',
+  // The packaged desktop build is served by Django/WhiteNoise under /static/,
+  // so build defaults to that base. A Vercel build sets VITE_BASE=/ to serve
+  // the SPA from the domain root. The dev server always stays at '/'.
+  base: process.env.VITE_BASE ?? (command === 'build' ? '/static/' : '/'),
   server: {
     port: 5173,
     proxy: {

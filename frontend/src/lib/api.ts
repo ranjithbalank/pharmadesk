@@ -5,8 +5,13 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t)
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
 
+// Same-origin '/api' in dev (Vite proxy) and in the packaged desktop app.
+// On a split host (Vercel frontend → Render backend) set VITE_API_BASE_URL
+// to the backend origin, e.g. https://pharmadesk-backend.onrender.com
+export const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '') + '/api'
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -34,7 +39,7 @@ api.interceptors.response.use(
  * server can't parse the upload. */
 export async function putForm<T = unknown>(url: string, fd: FormData) {
   const token = getToken()
-  return axios.put<T>('/api' + url, fd, {
+  return axios.put<T>(API_BASE + url, fd, {
     headers: token ? { Authorization: `Token ${token}` } : {},
   })
 }
