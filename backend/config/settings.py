@@ -32,8 +32,11 @@ SECRET_KEY = os.environ.get(
 # DEBUG on for dev (Vite serves the UI); off when packaged (desktop.py sets it).
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
-# Local-only app — the server only ever listens on this machine.
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# Local-only by default; in a hosted deploy (Render) the host(s) come from
+# DJANGO_ALLOWED_HOSTS (comma-separated). Render's *.onrender.com is allowed too.
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
+_extra_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
+ALLOWED_HOSTS += [h.strip() for h in _extra_hosts.split(',') if h.strip()]
 
 
 # Application definition
@@ -96,14 +99,25 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# DB file is overridable (PHARMADESK_DB_PATH) so the pharmacy can keep its
-# live data on a chosen drive/folder separate from the application code.
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('PHARMADESK_DB_PATH', BASE_DIR / 'db.sqlite3'),
+# In a hosted deploy DATABASE_URL (e.g. Render Postgres) wins; otherwise the
+# offline app falls back to SQLite. DB file is overridable (PHARMADESK_DB_PATH)
+# so the pharmacy can keep its live data on a chosen drive/folder.
+if os.environ.get('DATABASE_URL'):
+    import dj_database_url
+
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.environ.get('PHARMADESK_DB_PATH', BASE_DIR / 'db.sqlite3'),
+        }
+    }
 
 
 # Password validation
@@ -193,4 +207,14 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+# In a hosted deploy the Vercel frontend origin(s) come from CORS_ALLOWED_ORIGINS
+# (comma-separated, e.g. https://pharma-desk.vercel.app).
+_cors = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+CORS_ALLOWED_ORIGINS += [o.strip() for o in _cors.split(',') if o.strip()]
 CORS_ALLOW_CREDENTIALS = True
+
+# Cross-site POSTs (login, settings upload) need the frontend origin trusted.
+CSRF_TRUSTED_ORIGINS = [o for o in CORS_ALLOWED_ORIGINS if o.startswith('https')]
+
+# Behind Render's proxy, trust the forwarded scheme so Django knows it's HTTPS.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
