@@ -13,7 +13,14 @@ export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
     mutationFn: async () =>
       (await api.post<{ token: string; shop_name?: string }>(
         '/auth/login/', { username, password })).data,
-    onSuccess: (d) => { setToken(d.token); if (d.shop_name) setShopName(d.shop_name); onLoggedIn() },
+    onSuccess: (d) => {
+      setToken(d.token)
+      if (d.shop_name) setShopName(d.shop_name)
+      // Always land on the Dashboard after signing in — never the page the
+      // previous session happened to be on when it logged out.
+      window.history.replaceState(null, '', '/')
+      onLoggedIn()
+    },
     onError: () => setErr('Incorrect username or password.'),
   })
 
