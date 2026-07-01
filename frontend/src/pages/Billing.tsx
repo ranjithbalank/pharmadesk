@@ -4,7 +4,7 @@ import {
   Search, Plus, Trash2, Printer, Check, FileClock, CalendarCheck,
   FileSpreadsheet, FileText, UserPlus, MapPin,
 } from 'lucide-react'
-import { api, inr, downloadFile } from '../lib/api'
+import { api, inr, downloadFile, openFile } from '../lib/api'
 import type { Customer, DayClose, Invoice, Medicine, Paginated, Prescription } from '../lib/types'
 import { PageHeader, ScheduleBadge, Empty, Modal } from '../components/ui'
 
@@ -173,9 +173,9 @@ export default function Billing() {
             <Info label="Total" value={inr(saved.total)} />
           </div>
           <div className="flex gap-3 justify-center">
-            <a className="btn-primary" href={`/api/invoices/${saved.id}/pdf/`} target="_blank" rel="noreferrer">
+            <button className="btn-primary" onClick={() => openFile(`/invoices/${saved.id}/pdf/`, `${saved.number}.pdf`)}>
               <Printer size={16} /> Print / PDF
-            </a>
+            </button>
             <button className="btn-ghost" onClick={() => setSaved(null)}>New bill</button>
           </div>
         </div>

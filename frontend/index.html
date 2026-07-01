@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PharmaDesk — Sri Sakthi Medicals</title>
+    <title>PharmaDesk</title>
+    <!-- White-label: show the pharmacy's own name in the tab as early as
+         possible (persisted from the last login) so no fixed brand flashes. -->
+    <script>
+      try { var n = localStorage.getItem('pharmadesk_shop'); if (n) document.title = n } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

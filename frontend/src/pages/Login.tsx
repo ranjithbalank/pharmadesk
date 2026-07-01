@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { LogIn } from 'lucide-react'
-import { api, setToken } from '../lib/api'
+import { api, setToken, setShopName, getShopName } from '../lib/api'
 
 export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [err, setErr] = useState('')
+  const brand = getShopName() || 'PharmaDesk'
 
   const login = useMutation({
     mutationFn: async () =>
-      (await api.post<{ token: string }>('/auth/login/', { username, password })).data,
-    onSuccess: (d) => { setToken(d.token); onLoggedIn() },
+      (await api.post<{ token: string; shop_name?: string }>(
+        '/auth/login/', { username, password })).data,
+    onSuccess: (d) => { setToken(d.token); if (d.shop_name) setShopName(d.shop_name); onLoggedIn() },
     onError: () => setErr('Incorrect username or password.'),
   })
 
@@ -22,7 +24,7 @@ export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
           <div className="w-14 h-14 rounded-2xl bg-accent grid place-items-center text-white font-bold text-2xl shadow-lg shadow-accent/40 mb-3">
             ℞
           </div>
-          <h1 className="text-[22px] font-bold tracking-tight">PharmaDesk</h1>
+          <h1 className="text-[22px] font-bold tracking-tight">{brand}</h1>
           <p className="text-[13px] text-muted">Sign in to continue</p>
         </div>
 

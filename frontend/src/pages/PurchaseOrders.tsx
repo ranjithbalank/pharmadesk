@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sparkles, Plus, Send, PackageCheck, FileText, XCircle } from 'lucide-react'
-import { api, inr } from '../lib/api'
+import { api, inr, openFile } from '../lib/api'
 import { PageHeader, Empty, Modal } from '../components/ui'
 
 interface POLine { id?: number; medicine: number; medicine_name?: string; quantity: number; unit_cost: number; received_qty?: number; outstanding_qty?: number }
@@ -207,9 +207,9 @@ function PoDetail({ po, onClose }: { po: PO; onClose: () => void }) {
           {current.status_display}
         </span>
         <div className="flex gap-2">
-          <a className="btn-ghost !py-1.5" href={`/api/purchase-orders/${po.id}/pdf/`} target="_blank" rel="noreferrer">
+          <button className="btn-ghost !py-1.5" onClick={() => openFile(`/purchase-orders/${po.id}/pdf/`, `PO-${po.id}.pdf`)}>
             <FileText size={14} /> PDF
-          </a>
+          </button>
           {current.status === 'draft' && Object.keys(edits).length > 0 && (
             <button className="btn-ghost !py-1.5" disabled={saveQty.isPending} onClick={() => saveQty.mutate()}>
               Save quantities

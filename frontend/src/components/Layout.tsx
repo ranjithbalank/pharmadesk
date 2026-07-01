@@ -5,7 +5,7 @@ import {
   BarChart3, Settings, Menu, Bell, X, Phone, Building2, ChevronRight, LogOut,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { api, clearToken } from '../lib/api'
+import { api, clearToken, setShopName, getShopName } from '../lib/api'
 import type { Dashboard, NotificationItem } from '../lib/types'
 
 const NAV = [
@@ -70,9 +70,14 @@ export default function Layout() {
     return () => window.removeEventListener('keydown', onKey)
   }, [navigate])
 
+  // Keep the browser tab (and stored brand) in sync with the shop name so a
+  // rename in Settings shows up everywhere the product is white-labelled.
+  useEffect(() => { if (shop?.shop_name) setShopName(shop.shop_name) }, [shop?.shop_name])
+
+  const brand = shop?.shop_name || getShopName() || 'PharmaDesk'
   const alertCount = notes?.length ?? data?.alert_count ?? 0
-  const title = TITLES[loc.pathname] ?? 'PharmaDesk'
-  const initials = (shop?.shop_name ?? 'PharmaDesk')
+  const title = TITLES[loc.pathname] ?? brand
+  const initials = brand
     .split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 
   return (
@@ -88,7 +93,7 @@ export default function Layout() {
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="font-bold text-[15px] tracking-tight whitespace-nowrap truncate">{shop?.shop_name ?? 'PharmaDesk'}</div>
+              <div className="font-bold text-[15px] tracking-tight whitespace-nowrap truncate">{brand}</div>
               <div className="text-[11px] text-sidebar-muted font-mono whitespace-nowrap">GSTIN {shop?.gstin || '—'}</div>
             </div>
           )}
@@ -220,7 +225,7 @@ export default function Layout() {
                       {shop?.logo ? <img src={shop.logo} alt="" className="w-full h-full object-contain" /> : initials || 'PD'}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-bold text-[13.5px] truncate">{shop?.shop_name ?? 'PharmaDesk'}</div>
+                      <div className="font-bold text-[13.5px] truncate">{brand}</div>
                       <div className="text-[11px] text-muted font-mono truncate">GSTIN {shop?.gstin || '—'}</div>
                     </div>
                   </div>
