@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PharmaDesk</title>
-    <!-- White-label: show the pharmacy's own name in the tab as early as
-         possible (persisted from the last login) so no fixed brand flashes. -->
+    <!-- PharmaDesk is the permanent brand; append the pharmacy's own name
+         (persisted from the last login) so the tab reads "PharmaDesk — Name". -->
     <script>
-      try { var n = localStorage.getItem('pharmadesk_shop'); if (n) document.title = n } catch (e) {}
+      try { var n = localStorage.getItem('pharmadesk_shop'); if (n) document.title = 'PharmaDesk — ' + n } catch (e) {}
     </script>
   </head>
   <body>

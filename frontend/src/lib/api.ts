@@ -5,16 +5,18 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t)
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
 
-// White-label branding: each pharmacy runs under its own shop name, so the UI
-// (browser tab, login header, sidebar) shows that name — never a fixed product
-// name. Persisted so it's known before the authed settings load (no flash).
+// "PharmaDesk" is the permanent product brand. The pharmacy's own name (the
+// "medical name") is configured in Settings and shown alongside it, so the tab
+// reads "PharmaDesk — <medical name>". Persisted so it's known before the
+// authed settings load (no flash).
+export const BRAND = 'PharmaDesk'
 const SHOP_KEY = 'pharmadesk_shop'
 export const getShopName = () => localStorage.getItem(SHOP_KEY) || ''
 export const setShopName = (name: string) => {
   const n = (name || '').trim()
   if (!n) return
   localStorage.setItem(SHOP_KEY, n)
-  document.title = n
+  document.title = `${BRAND} — ${n}`
 }
 
 // Same-origin '/api' in dev (Vite proxy) and in the packaged desktop app.
