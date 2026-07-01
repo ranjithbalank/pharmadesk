@@ -2,6 +2,7 @@
 no internet needed. Layout is a compact A5-ish tax invoice.
 """
 from io import BytesIO
+from xml.sax.saxutils import escape as _escape
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A5
@@ -12,6 +13,12 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from apps.core.models import ShopSetting
+
+
+def esc(value):
+    """Escape user text before it goes into a ReportLab Paragraph, which parses
+    a small XML markup — an unescaped & or < in a name would corrupt the PDF."""
+    return _escape(str(value or ''))
 
 
 def invoice_pdf(invoice):
@@ -38,12 +45,31 @@ def invoice_pdf(invoice):
     ]
 
     cust = invoice.customer
+    buyer = esc(cust.name) if cust else 'Walk-in'
+    if cust and cust.phone:
+        buyer += f' &middot; {esc(cust.phone)}'
+
+    # Patient + prescriber (doctor) come from the prescriptions captured for
+    # scheduled-drug lines on this bill (FR-23). De-duplicated, in case a bill
+    # has several scheduled items sharing one patient/doctor.
+    rxs = list(invoice.prescriptions.all())
+    patients = ', '.join(dict.fromkeys(esc(r.patient_name) for r in rxs if r.patient_name))
+    doctors = ', '.join(dict.fromkeys(
+        esc(r.prescriber_name) + (f' (Reg: {esc(r.prescriber_reg_no)})' if r.prescriber_reg_no else '')
+        for r in rxs if r.prescriber_name
+    ))
+
     meta = [
         [Paragraph(f'<b>Tax Invoice:</b> {invoice.number}', small),
          Paragraph(f'<b>Date:</b> {invoice.created_at:%d-%m-%Y %H:%M}', right)],
-        [Paragraph(f'<b>Customer:</b> {cust.name if cust else "Walk-in"}', small),
+        [Paragraph(f'<b>Buyer:</b> {buyer}', small),
          Paragraph(f'<b>Payment:</b> {invoice.get_payment_mode_display()}', right)],
     ]
+    if patients or doctors:
+        meta.append([
+            Paragraph(f'<b>Patient:</b> {patients or "-"}', small),
+            Paragraph(f'<b>Doctor:</b> {doctors or "-"}', right),
+        ])
     meta_t = Table(meta, colWidths=[doc.width / 2] * 2)
     meta_t.setStyle(TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 2)]))
     elems += [meta_t, Spacer(1, 3 * mm)]
