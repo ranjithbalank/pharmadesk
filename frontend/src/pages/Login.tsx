@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { LogIn } from 'lucide-react'
+import { LogIn, Eye, EyeOff } from 'lucide-react'
 import { api, setToken, setShopName } from '../lib/api'
 
 export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
   const [err, setErr] = useState('')
 
   const login = useMutation({
@@ -38,8 +39,15 @@ export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
           </div>
           <div>
             <label className="label">Password</label>
-            <input className="input" type="password" value={password}
-              onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            <div className="relative">
+              <input className="input pr-10" type={showPw ? 'text' : 'password'} value={password}
+                onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+              <button type="button" onClick={() => setShowPw((s) => !s)}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                className="absolute inset-y-0 right-0 px-3 grid place-items-center text-muted hover:text-ink">
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           {err && <p className="text-[12.5px] text-danger">{err}</p>}
           <button type="submit" disabled={!username || !password || login.isPending}
